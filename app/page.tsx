@@ -6,31 +6,31 @@ import { Institution, AdminAccessRequest, TeacherAccessRequest, User } from '@/t
 import { supabase } from '@/lib/supabase/client';
 
 export default function Home() {
-  // Estados para controlar os diferentes modais
+  // States to control different modals
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [showTeacherModal, setShowTeacherModal] = useState(false);
-  
-  // Estados para verificação de email existente
+
+  // States for existing email verification
   const [adminEmailChecking, setAdminEmailChecking] = useState(false);
   const [adminExistingUser, setAdminExistingUser] = useState<User | null>(null);
   const [adminNameReadonly, setAdminNameReadonly] = useState(false);
   const [adminEmailMessage, setAdminEmailMessage] = useState('');
-  
+
   const [professorEmailChecking, setProfessorEmailChecking] = useState(false);
   const [professorExistingUser, setProfessorExistingUser] = useState<User | null>(null);
   const [professorNameReadonly, setProfessorNameReadonly] = useState(false);
   const [professorEmailMessage, setProfessorEmailMessage] = useState('');
-  
-  // Estado para controlar o tipo de solicitação de administrador
+
+  // State to control admin request type
   const [adminRequestType, setAdminRequestType] = useState<'nova' | 'existente' | ''>('');
-  
-  // Estados para loading e institutions
+
+  // States for loading and institutions
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingInstitutions, setLoadingInstitutions] = useState(false);
-  
-  // Lista de estados brasileiros
+
+  // List of Brazilian states
   const estadosBrasil = [
     'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 
     'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
@@ -54,17 +54,17 @@ export default function Home() {
       
       return [];
     } catch (error) {
-      console.error('Erro ao buscar instituições:', error);
+      console.error('Error fetching institutions:', error);
       setInstitutions([]);
       return [];
     } finally {
       setLoadingInstitutions(false);
     }
   };
-  
 
 
-  // Função para lidar com o login
+
+  // Function to handle login
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -73,14 +73,14 @@ export default function Home() {
     const password = formData.get('login_password') as string;
 
     if (!email || !password) {
-      toast.error('Preencha todos os campos');
+      toast.error('Please fill in all fields');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Buscar usuário no Supabase
+      // Fetch user from Supabase
       const { data: user, error } = await supabase
         .from('users')
         .select('*')
@@ -88,50 +88,50 @@ export default function Home() {
         .single();
 
       if (error || !user) {
-        toast.error('Email ou senha incorretos');
+        toast.error('Incorrect email or password');
         setLoading(false);
         return;
       }
 
-      // Verificar senha (temporariamente sem hash)
+      // Verify password (temporarily without hash)
       if (user.password_hash !== password) {
-        toast.error('Email ou senha incorretos');
+        toast.error('Incorrect email or password');
         setLoading(false);
         return;
       }
 
-      // Buscar role e institution do usuário em user_institutions
+      // Fetch user role and institution from user_institutions
       const { data: userInstitutions, error: instError } = await supabase
         .from('user_institutions')
         .select('role, institution_id')
         .eq('user_id', user.id);
 
       if (instError || !userInstitutions || userInstitutions.length === 0) {
-        toast.error('Usuário sem permissões. Entre em contato com o administrador.');
+        toast.error('User without permissions. Contact the administrator.');
         setLoading(false);
         return;
       }
 
-      // Pegar primeiro vínculo (prioridade: master > admin > professor)
+      // Get first link (priority: master > admin > professor)
       const masterLink = userInstitutions.find(ui => ui.role === 'master');
       const adminLink = userInstitutions.find(ui => ui.role === 'admin');
       const professorLink = userInstitutions.find(ui => ui.role === 'professor');
 
       const primaryLink = masterLink || adminLink || professorLink || userInstitutions[0];
 
-      // Criar objeto usuário com role e institution_id de user_institutions
+      // Create user object with role and institution_id from user_institutions
       const userWithRole = {
         ...user,
         role: primaryLink.role,
         institution_id: primaryLink.institution_id
       };
 
-      // Login direto baseado no role
+      // Direct login based on role
       localStorage.setItem('user', JSON.stringify(userWithRole));
-      toast.success(`Bem-vindo, ${user.name}!`);
+      toast.success(`Welcome, ${user.name}!`);
       setShowLoginModal(false);
 
-      // Redirecionar baseado no role
+      // Redirect based on role
       if (primaryLink.role === 'master') {
         window.location.href = '/master';
       } else if (primaryLink.role === 'admin') {
@@ -141,13 +141,13 @@ export default function Home() {
       }
 
     } catch {
-      toast.error('Erro interno. Tente novamente.');
+      toast.error('Internal error. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Função para verificar email existente
+  // Function to check existing email
   const checkExistingEmail = async (email: string, userType: 'admin' | 'professor') => {
     if (!email || !email.includes('@')) return;
     
@@ -167,17 +167,17 @@ export default function Home() {
         .single();
       
       if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao buscar usuário:', error);
+        console.error('Error fetching user:', error);
         return;
       }
-      
+
       if (existingUser) {
-        // Email já existe - mostrar apenas nome e tornar campo readonly
+        // Email already exists - show name only and make field readonly
         setExistingUser(existingUser);
         setNameReadonly(true);
-        setEmailMessage(`Email já cadastrado como: ${existingUser.name}`);
-        
-        // Preencher o campo nome automaticamente
+        setEmailMessage(`Email already registered as: ${existingUser.name}`);
+
+        // Automatically fill name field
         if (userType === 'admin') {
           const nameField = document.getElementById('admin_nome') as HTMLInputElement;
           if (nameField) nameField.value = existingUser.name;
@@ -186,21 +186,21 @@ export default function Home() {
           if (nameField) nameField.value = existingUser.name;
         }
       } else {
-        // Email não existe - manter nome já digitado pelo usuário
+        // Email doesn't exist - keep name already typed by user
         setExistingUser(null);
         setNameReadonly(false);
         setEmailMessage('');
 
-        // NÃO limpar o campo nome - preservar o que o usuário já digitou
+        // DO NOT clear name field - preserve what user has already typed
       }
     } catch (error) {
-      console.error('Erro ao verificar email:', error);
+      console.error('Error checking email:', error);
     } finally {
       setChecking(false);
     }
   };
 
-  // Função para resetar verificação de email
+  // Function to reset email verification
   const resetEmailCheck = (userType: 'admin' | 'professor') => {
     const setExistingUser = userType === 'admin' ? setAdminExistingUser : setProfessorExistingUser;
     const setNameReadonly = userType === 'admin' ? setAdminNameReadonly : setProfessorNameReadonly;
@@ -212,20 +212,20 @@ export default function Home() {
   };
 
 
-  // Carregar instituições ao montar o componente
+  // Load institutions when mounting component
   useEffect(() => {
     fetchInstitutions();
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header com nome do sistema */}
+      {/* Header with system name */}
       <header className="bg-white dark:bg-gray-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                {/* Ícone da escola */}
+                {/* School icon */}
                 <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -234,10 +234,10 @@ export default function Home() {
               </div>
               <div className="ml-4">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Sistema de Gestão de Ocorrências Escolares
+                  School Management System
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Controle e acompanhamento de ocorrências acadêmicas
+                  Control and tracking of academic occurrences
                 </p>
               </div>
             </div>
@@ -245,21 +245,21 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Conteúdo principal */}
+      {/* Main content */}
       <main className="max-w-4xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          {/* Título de boas-vindas */}
+          {/* Welcome title */}
           <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white sm:text-5xl">
-            Bem-vindo ao Sistema
+            Welcome to the System
           </h2>
           <p className="mt-4 text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Gerencie ocorrências escolares de forma eficiente e organizada. 
-            Mantenha o controle total sobre eventos disciplinares, pedagógicos e administrativos.
+            Manage school occurrences efficiently and organized.
+            Maintain full control over disciplinary, pedagogical, and administrative events.
           </p>
 
-          {/* Botões de ação */}
+          {/* Action buttons */}
           <div className="mt-10 flex flex-col lg:flex-row gap-4 justify-center items-center">
-            {/* Botão de Login */}
+            {/* Login Button */}
             <button
               onClick={() => setShowLoginModal(true)}
               className="w-full lg:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 ease-in-out flex items-center justify-center gap-2"
@@ -267,10 +267,10 @@ export default function Home() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
-              Fazer Login
+              Login
             </button>
 
-            {/* Botão de Solicitar Acesso como Administrador */}
+            {/* Administrator Access Request Button */}
             <button
               onClick={() => setShowAdminModal(true)}
               className="w-full lg:w-auto bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 ease-in-out flex items-center justify-center gap-2"
@@ -278,10 +278,10 @@ export default function Home() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              Acesso de Administrador
+              Administrator Access
             </button>
 
-            {/* Botão de Solicitar Acesso como Professor */}
+            {/* Teacher Access Request Button */}
             <button
               onClick={() => setShowTeacherModal(true)}
               className="w-full lg:w-auto bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-colors duration-200 ease-in-out flex items-center justify-center gap-2"
@@ -289,11 +289,11 @@ export default function Home() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Acesso de Professor
+              Teacher Access
             </button>
           </div>
 
-          {/* Recursos do sistema */}
+          {/* System features */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
               <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center mx-auto mb-4">
@@ -302,10 +302,10 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Registro de Ocorrências
+                Occurrence Registry
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Registre e acompanhe ocorrências disciplinares, pedagógicas e administrativas
+                Record and track disciplinary, pedagogical, and administrative occurrences
               </p>
             </div>
 
@@ -316,10 +316,10 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Relatórios e Análises
+                Reports and Analysis
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Gere relatórios detalhados e analise tendências comportamentais
+                Generate detailed reports and analyze behavioral trends
               </p>
             </div>
 
@@ -330,17 +330,17 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Gestão de Usuários
+                User Management
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Controle de acesso para professores, coordenadores e administradores
+                Access control for teachers, coordinators, and administrators
               </p>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Modal de Login */}
+      {/* Login Modal */}
       {showLoginModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
@@ -366,12 +366,12 @@ export default function Home() {
                   name="login_email"
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-white"
-                  placeholder="seu.email@escola.edu.br"
+                  placeholder="your.email@school.edu"
                 />
               </div>
               <div>
                 <label htmlFor="login_password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Senha
+                  Password
                 </label>
                 <input
                   type="password"
@@ -387,24 +387,24 @@ export default function Home() {
                 disabled={loading}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
-                {loading ? 'Entrando...' : 'Entrar'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal de Solicitação de Acesso - Administrador */}
+      {/* Access Request Modal - Administrator */}
       {showAdminModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Solicitar Acesso - Administrador</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Request Access - Administrator</h3>
               <button
                 onClick={() => {
                   setShowAdminModal(false);
-                  setAdminRequestType(''); // Reset do tipo quando fecha o modal
-                  resetEmailCheck('admin'); // Reset da verificação de email
+                  setAdminRequestType(''); // Reset type when closing modal
+                  resetEmailCheck('admin'); // Reset email verification
                 }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
@@ -414,10 +414,10 @@ export default function Home() {
               </button>
             </div>
             <form className="space-y-4" onSubmit={handleAdminSubmit}>
-              {/* Campos básicos */}
+              {/* Basic fields */}
               <div>
                 <label htmlFor="admin_nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome Completo *
+                  Full Name *
                 </label>
                 <input
                   type="text"
@@ -426,11 +426,11 @@ export default function Home() {
                   required
                   readOnly={adminNameReadonly}
                   className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white ${
-                    adminNameReadonly 
-                      ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' 
+                    adminNameReadonly
+                      ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed'
                       : ''
                   }`}
-                  placeholder="Seu nome completo"
+                  placeholder="Your full name"
                 />
               </div>
               <div>
@@ -444,7 +444,7 @@ export default function Home() {
                     name="admin_email"
                     required
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="seu.email@exemplo.com"
+                    placeholder="your.email@example.com"
                     onBlur={(e) => {
                       if (e.target.value) {
                         checkExistingEmail(e.target.value, 'admin');
@@ -471,10 +471,10 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Tipo de solicitação */}
+              {/* Request type */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  Tipo de Solicitação *
+                  Request Type *
                 </label>
                 <div className="space-y-2">
                   <label className="flex items-center">
@@ -486,7 +486,7 @@ export default function Home() {
                       onChange={(e) => setAdminRequestType(e.target.value as 'nova' | 'existente')}
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                     />
-                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Criar nova instituição</span>
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Create new institution</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -497,18 +497,18 @@ export default function Home() {
                       onChange={(e) => setAdminRequestType(e.target.value as 'nova' | 'existente')}
                       className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300"
                     />
-                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Administrar instituição existente</span>
+                    <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Manage existing institution</span>
                   </label>
                 </div>
               </div>
 
-              {/* Campos condicionais para nova instituição */}
+              {/* Conditional fields for new institution */}
               {adminRequestType === 'nova' && (
                 <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <h4 className="text-sm font-medium text-purple-800 dark:text-purple-300">Dados da Nova Instituição</h4>
+                  <h4 className="text-sm font-medium text-purple-800 dark:text-purple-300">New Institution Data</h4>
                   <div>
                     <label htmlFor="instituicao_nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Nome da Instituição *
+                      Institution Name *
                     </label>
                     <input
                       type="text"
@@ -516,12 +516,12 @@ export default function Home() {
                       name="new_institution_name"
                       required
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                      placeholder="Ex: Colégio Dom Pedro II"
+                      placeholder="E.g.: Lincoln High School"
                     />
                   </div>
                   <div>
                     <label htmlFor="instituicao_endereco" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Endereço *
+                      Address *
                     </label>
                     <input
                       type="text"
@@ -530,13 +530,13 @@ export default function Home() {
                       required
                       minLength={5}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                      placeholder="Rua, número, bairro (mínimo 5 caracteres)"
+                      placeholder="Street, number, neighborhood (minimum 5 characters)"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="instituicao_cidade" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Cidade *
+                        City *
                       </label>
                       <input
                         type="text"
@@ -544,12 +544,12 @@ export default function Home() {
                         name="new_institution_city"
                         required
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="Digite o nome da cidade"
+                        placeholder="Enter city name"
                       />
                     </div>
                     <div>
                       <label htmlFor="instituicao_estado" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Estado *
+                        State *
                       </label>
                       <select
                         id="instituicao_estado"
@@ -557,7 +557,7 @@ export default function Home() {
                         required
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
                       >
-                        <option value="">Selecione</option>
+                        <option value="">Select</option>
                         {estadosBrasil.map(estado => (
                           <option key={estado} value={estado}>{estado}</option>
                         ))}
@@ -567,13 +567,13 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Campo condicional para instituição existente */}
+              {/* Conditional field for existing institution */}
               {adminRequestType === 'existente' && (
                 <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                  <h4 className="text-sm font-medium text-purple-800 dark:text-purple-300 mb-3">Selecionar Instituição</h4>
+                  <h4 className="text-sm font-medium text-purple-800 dark:text-purple-300 mb-3">Select Institution</h4>
                   <div>
                     <label htmlFor="instituicao_existente" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Instituição *
+                      Institution *
                     </label>
                     <select
                       id="instituicao_existente"
@@ -581,9 +581,9 @@ export default function Home() {
                       required
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
                     >
-                      <option value="">Selecione uma instituição</option>
+                      <option value="">Select an institution</option>
                       {loadingInstitutions ? (
-                        <option disabled>Carregando...</option>
+                        <option disabled>Loading...</option>
                       ) : (
                         institutions.map(instituicao => (
                           <option key={instituicao.id} value={instituicao.id}>
@@ -601,23 +601,23 @@ export default function Home() {
                 disabled={!adminRequestType || loading}
                 className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
-                {loading ? 'Enviando...' : 'Enviar Solicitação'}
+                {loading ? 'Sending...' : 'Send Request'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal de Solicitação de Acesso - Professor */}
+      {/* Access Request Modal - Teacher */}
       {showTeacherModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Solicitar Acesso - Professor</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Request Access - Teacher</h3>
               <button
                 onClick={() => {
                   setShowTeacherModal(false);
-                  resetEmailCheck('professor'); // Reset da verificação de email
+                  resetEmailCheck('professor'); // Reset email verification
                 }}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
@@ -629,7 +629,7 @@ export default function Home() {
             <form className="space-y-4" onSubmit={handleTeacherSubmit}>
               <div>
                 <label htmlFor="teacher_nome" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Nome Completo *
+                  Full Name *
                 </label>
                 <input
                   type="text"
@@ -638,11 +638,11 @@ export default function Home() {
                   required
                   readOnly={professorNameReadonly}
                   className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white ${
-                    professorNameReadonly 
-                      ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed' 
+                    professorNameReadonly
+                      ? 'bg-gray-100 dark:bg-gray-600 cursor-not-allowed'
                       : ''
                   }`}
-                  placeholder="Seu nome completo"
+                  placeholder="Your full name"
                 />
               </div>
               <div>
@@ -656,7 +656,7 @@ export default function Home() {
                     name="professor_email"
                     required
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="seu.email@escola.edu.br"
+                    placeholder="your.email@school.edu"
                     onBlur={(e) => {
                       if (e.target.value) {
                         checkExistingEmail(e.target.value, 'professor');
@@ -684,7 +684,7 @@ export default function Home() {
               </div>
               <div>
                 <label htmlFor="teacher_instituicao" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Selecionar Instituição *
+                  Select Institution *
                 </label>
                 <select
                   id="teacher_instituicao"
@@ -692,9 +692,9 @@ export default function Home() {
                   required
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
                 >
-                  <option value="">Selecione sua instituição</option>
+                  <option value="">Select your institution</option>
                   {loadingInstitutions ? (
-                    <option disabled>Carregando...</option>
+                    <option disabled>Loading...</option>
                   ) : (
                     institutions.map(instituicao => (
                       <option key={instituicao.id} value={instituicao.id}>
@@ -709,67 +709,68 @@ export default function Home() {
                 disabled={loading}
                 className="w-full bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition-colors"
               >
-                {loading ? 'Enviando...' : 'Enviar Solicitação'}
+                {loading ? 'Sending...' : 'Send Request'}
               </button>
             </form>
           </div>
         </div>
       )}
 
-      
+
+
       {/* Toast notifications */}
       <Toaster position="top-right" />
     </div>
   );
 
-  // Função para lidar com o envio do formulário de administrador
+  // Function to handle admin form submission
   async function handleAdminSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    
+
     const formData = new FormData(e.currentTarget);
-    
-    // Capturar dados básicos do form
+
+    // Capture basic form data
     const adminName = adminExistingUser ? adminExistingUser.name : formData.get('admin_nome') as string;
     const adminEmail = formData.get('admin_email') as string;
     const adminType = formData.get('admin_request_type') as string;
-    
-    // Capturar campos da nova instituição
+
+    // Capture new institution fields
     const newInstitutionName = formData.get('new_institution_name') as string;
     const newInstitutionAddress = formData.get('new_institution_address') as string;
     const newInstitutionCity = formData.get('new_institution_city') as string;
     const newInstitutionState = formData.get('new_institution_state') as string;
-    
-    // Capturar instituição existente
+
+    // Capture existing institution
     const existingInstitutionId = formData.get('existing_institution_id') as string;
-    
+
     setLoading(true);
-    
+
     try {
-      
-      // Validação básica
+
+      // Basic validation
       if (!adminName || !adminEmail) {
-        toast.error('Nome e email são obrigatórios');
+        toast.error('Name and email are required');
         setLoading(false);
         return;
       }
 
-      // Validação de email duplicado
+      // Duplicate email validation
       if (adminExistingUser) {
-        toast.error('Este email já está cadastrado. Use outro email.');
+        toast.error('This email is already registered. Use a different email.');
         setLoading(false);
         return;
       }
 
       if (!adminType) {
-        toast.error('Selecione o tipo de solicitação');
+        toast.error('Select the request type');
         setLoading(false);
         return;
       }
 
-      // Validação específica baseada no tipo
+      // Type-specific validation
       if (adminType === 'nova') {
         if (!newInstitutionName || !newInstitutionAddress || !newInstitutionCity || !newInstitutionState) {
-          toast.error('Preencha todos os campos da instituição');
+          toast.error('Fill in all institution fields');
           setLoading(false);
           return;
         }
@@ -790,18 +791,18 @@ export default function Home() {
         };
       } else if (adminType === 'existente') {
         if (!existingInstitutionId) {
-          toast.error('Selecione uma instituição');
+          toast.error('Select an institution');
           setLoading(false);
           return;
         }
-        
+
         requestData.institution_id = existingInstitutionId;
       } else {
-        toast.error('Tipo de solicitação inválido');
+        toast.error('Invalid request type');
         setLoading(false);
         return;
       }
-      
+
       const payloadToSend = {
         nome: requestData.nome,
         email: requestData.email,
@@ -816,7 +817,7 @@ export default function Home() {
         new_institution_city: newInstitutionCity,
         new_institution_state: newInstitutionState,
       };
-      
+
       const response = await fetch('/api/access-request', {
         method: 'POST',
         headers: {
@@ -824,47 +825,47 @@ export default function Home() {
         },
         body: JSON.stringify(payloadToSend),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok) {
-        toast.success('Solicitação enviada com sucesso!');
+        toast.success('Request sent successfully!');
         setShowAdminModal(false);
         setAdminRequestType('');
         resetEmailCheck('admin');
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error(result.error || 'Erro ao enviar solicitação');
+        toast.error(result.error || 'Error sending request');
       }
     } catch {
-      toast.error('Erro ao enviar solicitação');
+      toast.error('Error sending request');
     } finally {
       setLoading(false);
     }
   }
-  
-  // Função para lidar com o envio do formulário de professor
+
+  // Function to handle teacher form submission
   async function handleTeacherSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
-    
+
     const formData = new FormData(e.currentTarget);
-    
+
     const professorName = professorExistingUser ? professorExistingUser.name : formData.get('professor_name');
     const professorEmail = formData.get('professor_email');
     const professorInstitution = formData.get('professor_institution');
-    
+
     try {
-      // Validação
+      // Validation
       if (!professorName || !professorEmail || !professorInstitution) {
-        toast.error('Preencha todos os campos obrigatórios');
+        toast.error('Fill in all required fields');
         setLoading(false);
         return;
       }
 
-      // Validação de email duplicado
+      // Duplicate email validation
       if (professorExistingUser) {
-        toast.error('Este email já está cadastrado. Use outro email.');
+        toast.error('This email is already registered. Use a different email.');
         setLoading(false);
         return;
       }
@@ -874,7 +875,7 @@ export default function Home() {
         email: professorEmail as string,
         institution_id: professorInstitution as string,
       };
-      
+
       const response = await fetch('/api/access-request', {
         method: 'POST',
         headers: {
@@ -890,19 +891,19 @@ export default function Home() {
           existing_user_id: professorExistingUser?.id || null,
         }),
       });
-      
+
       const result = await response.json();
-      
+
       if (response.ok) {
-        toast.success('Solicitação enviada com sucesso!');
+        toast.success('Request sent successfully!');
         setShowTeacherModal(false);
         resetEmailCheck('professor');
         (e.target as HTMLFormElement).reset();
       } else {
-        toast.error(result.error || 'Erro ao enviar solicitação');
+        toast.error(result.error || 'Error sending request');
       }
     } catch {
-      toast.error('Erro ao enviar solicitação');
+      toast.error('Error sending request');
     } finally {
       setLoading(false);
     }

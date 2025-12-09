@@ -7,11 +7,11 @@ import { Usuario, Institution } from '@/types';
 import toast from 'react-hot-toast';
 
 interface Stats {
-  totalTurmas: number;
-  totalAlunos: number;
-  totalProfessores: number;
+  totalClasss: number;
+  totalStudents: number;
+  totalTeacheres: number;
   ocorrenciasEsteMs: number;
-  solicitacoesPendentes: number;
+  solicitacoesPendings: number;
 }
 
 
@@ -25,52 +25,52 @@ export default function AdminPage() {
   const [availableRoles, setAvailableRoles] = useState<string[]>([]);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [stats, setStats] = useState<Stats>({
-    totalTurmas: 0,
-    totalAlunos: 0,
-    totalProfessores: 0,
+    totalClasss: 0,
+    totalStudents: 0,
+    totalTeacheres: 0,
     ocorrenciasEsteMs: 0,
-    solicitacoesPendentes: 0
+    solicitacoesPendings: 0
   });
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(false);
 
   const checkAvailableRoles = useCallback(async (userId: string, institutionId: string): Promise<string[]> => {
     try {
-      console.log('🎭 Verificando roles disponíveis para:', { userId, institutionId });
+      console.log('🎭 Checking available roles for:', { userId, institutionId });
       const roles: string[] = [];
 
-      // Verificar role principal do usuário se tem institution_id matching
+      // Check user's main role if has matching institution_id
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        if (userData.institution_id === institutionId && userData.role) {
-          roles.push(userData.role);
-          console.log('✅ Role principal encontrado:', userData.role);
+        const userDate = JSON.parse(storedUser);
+        if (userDate.institution_id === institutionId && userDate.role) {
+          roles.push(userDate.role);
+          console.log('✅ Main role found:', userDate.role);
         }
       }
 
-      // Buscar roles em user_institutions para esta instituição específica
-      const { data: userInstData, error } = await supabase
+      // Fetch roles from user_institutions for this specific institution
+      const { data: userInstDate, error } = await supabase
         .from('user_institutions')
         .select('role')
         .eq('user_id', userId)
         .eq('institution_id', institutionId);
 
-      if (!error && userInstData) {
-        userInstData.forEach((ui: { role: string }) => {
+      if (!error && userInstDate) {
+        userInstDate.forEach((ui: { role: string }) => {
           if (ui.role && !roles.includes(ui.role)) {
             roles.push(ui.role);
-            console.log('✅ Role adicional encontrado:', ui.role);
+            console.log('✅ Additional role found:', ui.role);
           }
         });
       } else if (error) {
-        console.error('❌ Erro ao buscar roles em user_institutions:', error);
+        console.error('❌ Error fetching roles from user_institutions:', error);
       }
 
-      console.log('🎭 Roles totais encontrados na instituição:', roles);
+      console.log('🎭 Total roles found in institution:', roles);
       return roles;
     } catch (error) {
-      console.error('❌ Erro ao verificar roles disponíveis:', error);
+      console.error('❌ Error checking available roles:', error);
       return [];
     }
   }, []);
@@ -78,12 +78,12 @@ export default function AdminPage() {
   const fetchStats = useCallback(async (institutionId: string) => {
     // Evitar múltiplas chamadas simultâneas
     if (statsLoading) {
-      console.log('⏳ Estatísticas já estão sendo carregadas, ignorando nova chamada');
+      console.log('⏳ Statistics já estão sendo carregadas, ignorando nova chamada');
       return;
     }
     
     try {
-      console.log('📊 Carregando estatísticas para instituição:', institutionId);
+      console.log('📊 Loading estatísticas para instituição:', institutionId);
       setStatsLoading(true);
       
       if (!institutionId) {
@@ -98,9 +98,9 @@ export default function AdminPage() {
       
       console.log('📅 Período para ocorrências:', { startOfMonth, now: now.toISOString() });
 
-      // Buscar contadores com as consultas corretas
+      // Search contadores com as consultas corretas
       const [turmasResult, alunosResult, professoresResult, ocorrenciasResult, solicitacoesResult] = await Promise.all([
-        // Total de Turmas ativas (não na lixeira e ativas)
+        // Total Classs ativas (não na lixeira e ativas)
         supabase
           .from('classes')
           .select('*', { count: 'exact', head: true })
@@ -108,28 +108,28 @@ export default function AdminPage() {
           .eq('is_active', true)
           .is('deleted_at', null),
         
-        // Total de Alunos com turma válida
+        // Total Students com turma válida
         supabase
           .from('students')
           .select('*', { count: 'exact', head: true })
           .eq('institution_id', institutionId)
           .not('class_id', 'is', null),
         
-        // Total de Professores
+        // Total Teacheres
         supabase
           .from('user_institutions')
           .select('*', { count: 'exact', head: true })
           .eq('institution_id', institutionId)
           .eq('role', 'professor'),
         
-        // Ocorrências deste mês
+        // Occurrences deste mês
         supabase
           .from('occurrences')
           .select('*', { count: 'exact', head: true })
           .eq('institution_id', institutionId)
           .gte('occurred_at', startOfMonth),
         
-        // Solicitações de professores pendentes
+        // Requests de professores pendentes
         supabase
           .from('access_requests')
           .select('*', { count: 'exact', head: true })
@@ -139,37 +139,37 @@ export default function AdminPage() {
       ]);
 
       console.log('📊 Resultados dos contadores:');
-      console.log('Total de turmas ativas:', turmasResult.count || 0);
-      console.log('Total de alunos com turma:', alunosResult.count || 0);
-      console.log('Total de professores:', professoresResult.count || 0);
-      console.log('Ocorrências este mês:', ocorrenciasResult.count || 0);
-      console.log('Solicitações pendentes:', solicitacoesResult.count || 0);
+      console.log('Total turmas ativas:', turmasResult.count || 0);
+      console.log('Total alunos com turma:', alunosResult.count || 0);
+      console.log('Total professores:', professoresResult.count || 0);
+      console.log('Occurrences este mês:', ocorrenciasResult.count || 0);
+      console.log('Requests pendentes:', solicitacoesResult.count || 0);
       
       setStats({
-        totalTurmas: turmasResult.count || 0,
-        totalAlunos: alunosResult.count || 0,
-        totalProfessores: professoresResult.count || 0,
+        totalClasss: turmasResult.count || 0,
+        totalStudents: alunosResult.count || 0,
+        totalTeacheres: professoresResult.count || 0,
         ocorrenciasEsteMs: ocorrenciasResult.count || 0,
-        solicitacoesPendentes: solicitacoesResult.count || 0
+        solicitacoesPendings: solicitacoesResult.count || 0
       });
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
-      toast.error('Erro ao carregar estatísticas');
+      console.error('Error buscar estatísticas:', error);
+      toast.error('Error carregar estatísticas');
     } finally {
       setStatsLoading(false);
     }
   }, [statsLoading]);
 
   useEffect(() => {
-    const loadUserInstitutions = async (userId: string, userData?: Usuario) => {
+    const loadUserInstitutions = async (userId: string, userDate?: Usuario) => {
       try {
-        console.log('🏫 Carregando instituições do usuário:', userId);
-        const userInstitutionsData: Institution[] = [];
+        console.log('🏫 Loading instituições do usuário:', userId);
+        const userInstitutionsDate: Institution[] = [];
         
-        // Usar userData passado como parâmetro ou o estado atual do user
-        const currentUser = userData || user;
+        // Usar userDate passado como parâmetro ou o estado atual do user
+        const currentUser = userDate || user;
         
-        // Buscar instituições através de institution_id (método antigo)
+        // Search instituições através de institution_id (método antigo)
         if (currentUser?.institution_id) {
           console.log('📍 Buscando instituição direta:', currentUser.institution_id);
           const { data: directInstitution, error: directError } = await supabase
@@ -179,15 +179,15 @@ export default function AdminPage() {
             .single();
           
           if (!directError && directInstitution) {
-            console.log('✅ Instituição direta encontrada:', directInstitution.nome);
-            userInstitutionsData.push(directInstitution);
+            console.log('✅ Institution direta encontrada:', directInstitution.nome);
+            userInstitutionsDate.push(directInstitution);
           } else if (directError) {
-            console.log('ℹ️ Instituição direta não encontrada:', directError.message);
+            console.log('ℹ️ Institution direta não encontrada:', directError.message);
           }
         }
         
-        // Buscar também por user_institutions (método novo)
-        const { data: userInstData, error: userInstError } = await supabase
+        // Search também por user_institutions (método novo)
+        const { data: userInstDate, error: userInstError } = await supabase
           .from('user_institutions')
           .select(`
             institutions!inner(
@@ -201,9 +201,9 @@ export default function AdminPage() {
           `)
           .eq('user_id', userId);
         
-        if (!userInstError && userInstData) {
+        if (!userInstError && userInstDate) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const additionalInstitutions = userInstData.map((ui: any) => ({
+          const additionalInstitutions = userInstDate.map((ui: any) => ({
             id: ui.institutions.id,
             nome: ui.institutions.name || ui.institutions.nome,
             endereco: ui.institutions.address,
@@ -214,25 +214,25 @@ export default function AdminPage() {
           } as Institution));
           // Evitar duplicatas
           additionalInstitutions.forEach((inst: Institution) => {
-            if (!userInstitutionsData.find(existing => existing.id === inst.id)) {
-              userInstitutionsData.push(inst);
+            if (!userInstitutionsDate.find(existing => existing.id === inst.id)) {
+              userInstitutionsDate.push(inst);
             }
           });
         }
         
-        setUserInstitutions(userInstitutionsData);
+        setUserInstitutions(userInstitutionsDate);
         
         // Se não tem instituição ativa, definir a primeira
-        if (userInstitutionsData.length > 0 && !localStorage.getItem('activeInstitution')) {
-          const firstInstitution = userInstitutionsData[0];
+        if (userInstitutionsDate.length > 0 && !localStorage.getItem('activeInstitution')) {
+          const firstInstitution = userInstitutionsDate[0];
           setInstitution(firstInstitution);
           localStorage.setItem('activeInstitution', JSON.stringify(firstInstitution));
-          localStorage.setItem('allUserInstitutions', JSON.stringify(userInstitutionsData));
+          localStorage.setItem('allUserInstitutions', JSON.stringify(userInstitutionsDate));
           await fetchStats(firstInstitution.id);
           
           // Verificar roles disponíveis na primeira instituição
-          if (userData || user) {
-            const roles = await checkAvailableRoles((userData || user)!.id, firstInstitution.id);
+          if (userDate || user) {
+            const roles = await checkAvailableRoles((userDate || user)!.id, firstInstitution.id);
             setAvailableRoles(roles);
             
             // Definir role ativo baseado no localStorage ou padrão
@@ -249,8 +249,8 @@ export default function AdminPage() {
           }
         }
       } catch (error) {
-        console.error('Erro ao carregar instituições do usuário:', error);
-        toast.error('Erro ao carregar instituições');
+        console.error('Error carregar instituições do usuário:', error);
+        toast.error('Error carregar instituições');
       }
     };
 
@@ -269,41 +269,41 @@ export default function AdminPage() {
         });
         
         if (!storedUser) {
-          console.log('❌ Usuário não encontrado no localStorage');
+          console.log('❌ User não encontrado no localStorage');
           router.push('/');
           return;
         }
 
-        let userData;
+        let userDate;
         try {
-          userData = JSON.parse(storedUser);
-          console.log('✅ Dados do usuário parseados:', userData);
+          userDate = JSON.parse(storedUser);
+          console.log('✅ Dados do usuário parseados:', userDate);
         } catch (parseError) {
-          console.error('❌ Erro ao fazer parse dos dados do usuário:', parseError);
+          console.error('❌ Error fazer parse dos dados do usuário:', parseError);
           localStorage.removeItem('user');
           router.push('/');
           return;
         }
         
-        if (!userData || !userData.role || userData.role !== 'admin') {
-          console.log('❌ Usuário inválido ou não é admin:', userData);
+        if (!userDate || !userDate.role || userDate.role !== 'admin') {
+          console.log('❌ User inválido ou não é admin:', userDate);
           toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userData);
+        setUser(userDate);
 
         // Verificar se tem instituição ativa selecionada
         if (storedActiveInstitution) {
           let activeInstitution;
           try {
             activeInstitution = JSON.parse(storedActiveInstitution);
-            console.log('🏢 Instituição ativa carregada:', activeInstitution?.nome);
+            console.log('🏢 Institution ativa carregada:', activeInstitution?.nome);
           } catch (parseError) {
-            console.error('❌ Erro ao fazer parse da instituição ativa:', parseError);
+            console.error('❌ Error fazer parse da instituição ativa:', parseError);
             localStorage.removeItem('activeInstitution');
-            await loadUserInstitutions(userData.id, userData);
+            await loadUserInstitutions(userDate.id, userDate);
             return;
           }
           
@@ -319,23 +319,23 @@ export default function AdminPage() {
                   setUserInstitutions(allInstitutions);
                 } else {
                   console.log('⚠️ Dados de instituições inválidos, buscando no banco');
-                  await loadUserInstitutions(userData.id, userData);
+                  await loadUserInstitutions(userDate.id, userDate);
                 }
               } catch (parseError) {
-                console.error('❌ Erro ao fazer parse das instituições:', parseError);
+                console.error('❌ Error fazer parse das instituições:', parseError);
                 localStorage.removeItem('allUserInstitutions');
-                await loadUserInstitutions(userData.id, userData);
+                await loadUserInstitutions(userDate.id, userDate);
               }
             } else {
               // Se não tem todas, buscar no banco
-              await loadUserInstitutions(userData.id, userData);
+              await loadUserInstitutions(userDate.id, userDate);
             }
             
             if (activeInstitution?.id) {
               await fetchStats(activeInstitution.id);
               
               // Verificar roles disponíveis na instituição atual
-              const roles = await checkAvailableRoles(userData.id, activeInstitution.id);
+              const roles = await checkAvailableRoles(userDate.id, activeInstitution.id);
               setAvailableRoles(roles);
               
               // Definir role ativo baseado no localStorage ou padrão
@@ -351,17 +351,17 @@ export default function AdminPage() {
               }
             }
           } else {
-            console.log('⚠️ Instituição ativa sem ID válido');
-            await loadUserInstitutions(userData.id, userData);
+            console.log('⚠️ Institution ativa sem ID válido');
+            await loadUserInstitutions(userDate.id, userDate);
           }
         } else {
           // Se não tem instituição ativa, buscar e definir
           console.log('ℹ️ Nenhuma instituição ativa, carregando do banco');
-          await loadUserInstitutions(userData.id, userData);
+          await loadUserInstitutions(userDate.id, userDate);
         }
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Erro ao verificar autenticação');
+        toast.error('Error verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -371,7 +371,7 @@ export default function AdminPage() {
     checkAuth();
   }, [router]);
 
-  // Fechar dropdown ao clicar fora
+  // Close dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showInstitutionDropdown && !(event.target as Element).closest('.institution-dropdown')) {
@@ -385,7 +385,7 @@ export default function AdminPage() {
     };
   }, [showInstitutionDropdown]);
 
-  // Fechar role dropdown ao clicar fora
+  // Close role dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (showRoleDropdown && !(event.target as Element).closest('.role-dropdown')) {
@@ -406,8 +406,8 @@ export default function AdminPage() {
       console.log('🔄 Trocando para instituição:', newInstitution?.nome);
       
       if (!newInstitution?.id) {
-        console.error('❌ Instituição inválida para troca');
-        toast.error('Instituição inválida');
+        console.error('❌ Institution inválida para troca');
+        toast.error('Institution inválida');
         return;
       }
       
@@ -416,7 +416,7 @@ export default function AdminPage() {
       try {
         localStorage.setItem('activeInstitution', JSON.stringify(newInstitution));
       } catch (storageError) {
-        console.error('❌ Erro ao salvar instituição no localStorage:', storageError);
+        console.error('❌ Error salvar instituição no localStorage:', storageError);
       }
       
       setShowInstitutionDropdown(false);
@@ -443,8 +443,8 @@ export default function AdminPage() {
       
       toast.success(`Trocado para: ${newInstitution.nome}`);
     } catch (error) {
-      console.error('Erro ao trocar instituição:', error);
-      toast.error('Erro ao trocar instituição');
+      console.error('Error trocar instituição:', error);
+      toast.error('Error trocar instituição');
     }
   };
 
@@ -468,10 +468,10 @@ export default function AdminPage() {
         return;
       }
       
-      toast.success(`Trocado para: ${newRole === 'admin' ? 'Administrador' : 'Professor'}`);
+      toast.success(`Trocado para: ${newRole === 'admin' ? 'Administrador' : 'Teacher'}`);
     } catch (error) {
-      console.error('Erro ao trocar role:', error);
-      toast.error('Erro ao trocar papel');
+      console.error('Error trocar role:', error);
+      toast.error('Error trocar papel');
     }
   };
 
@@ -484,7 +484,7 @@ export default function AdminPage() {
       toast.success('Logout realizado com sucesso');
       router.push('/');
     } catch {
-      toast.error('Erro ao fazer logout');
+      toast.error('Error fazer logout');
     }
   };
 
@@ -492,7 +492,7 @@ export default function AdminPage() {
     if (!institution?.id) return;
     
     try {
-      // Buscar alunos órfãos (sem turma válida)
+      // Search alunos órfãos (sem turma válida)
       const { data: orphanedStudents, error: orphanError } = await supabase
         .from('students')
         .select('id, name, class_id')
@@ -500,11 +500,11 @@ export default function AdminPage() {
         .is('class_id', null);
       
       if (orphanError) {
-        console.error('Erro ao buscar alunos órfãos:', orphanError);
+        console.error('Error buscar alunos órfãos:', orphanError);
         return;
       }
       
-      console.log('🧹 Alunos órfãos encontrados:', orphanedStudents?.length || 0);
+      console.log('🧹 Students órfãos encontrados:', orphanedStudents?.length || 0);
       
       if (orphanedStudents && orphanedStudents.length > 0) {
         const confirmed = window.confirm(
@@ -521,8 +521,8 @@ export default function AdminPage() {
             .in('id', studentIds);
           
           if (deleteError) {
-            console.error('Erro ao deletar alunos órfãos:', deleteError);
-            toast.error('Erro ao limpar alunos órfãos');
+            console.error('Error deletar alunos órfãos:', deleteError);
+            toast.error('Error limpar alunos órfãos');
           } else {
             toast.success(`${orphanedStudents.length} aluno(s) órfão(s) removido(s)`);
             await fetchStats(institution.id);
@@ -533,32 +533,32 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Erro na limpeza de alunos órfãos:', error);
-      toast.error('Erro ao limpar dados');
+      toast.error('Error limpar dados');
     }
   };
 
   const handleCardClick = (feature: string) => {
-    if (feature === 'Gerenciar Turmas') {
+    if (feature === 'Gerenciar Classs') {
       router.push('/admin/turmas');
       return;
     }
     
-    if (feature === 'Gerenciar Alunos') {
+    if (feature === 'Gerenciar Students') {
       router.push('/admin/alunos');
       return;
     }
     
-    if (feature === 'Tipos de Ocorrências') {
+    if (feature === 'Types de Occurrences') {
       router.push('/admin/tipos-ocorrencias');
       return;
     }
     
-    if (feature === 'Gerenciar Professores') {
+    if (feature === 'Gerenciar Teacheres') {
       router.push('/admin/professores');
       return;
     }
     
-    if (feature === 'Solicitações de Professores') {
+    if (feature === 'Requests de Teacheres') {
       router.push('/admin/professores?tab=pending');
       return;
     }
@@ -568,7 +568,7 @@ export default function AdminPage() {
       return;
     }
     
-    if (feature === 'Dashboard de Ocorrências') {
+    if (feature === 'Dashboard de Occurrences') {
       router.push('/admin/dashboard');
       return;
     }
@@ -581,7 +581,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -594,57 +594,57 @@ export default function AdminPage() {
   const academicCards = [
     {
       icon: '👥',
-      title: 'Gerenciar Turmas',
-      description: 'Criar e organizar turmas',
-      feature: 'Gerenciar Turmas'
+      title: 'Gerenciar Classs',
+      description: 'Create e organizar turmas',
+      feature: 'Gerenciar Classs'
     },
     {
       icon: '🎓',
-      title: 'Gerenciar Alunos',
-      description: 'Cadastrar e editar alunos',
-      feature: 'Gerenciar Alunos'
+      title: 'Gerenciar Students',
+      description: 'Register e editar alunos',
+      feature: 'Gerenciar Students'
     },
     {
       icon: '📝',
-      title: 'Tipos de Ocorrências',
+      title: 'Types de Occurrences',
       description: 'Definir tipos de ocorrências',
-      feature: 'Tipos de Ocorrências'
+      feature: 'Types de Occurrences'
     }
   ];
 
   const staffCards = [
     {
       icon: '👨‍🏫',
-      title: 'Gerenciar Professores',
-      description: 'Aprovar e gerenciar professores',
-      feature: 'Gerenciar Professores'
+      title: 'Gerenciar Teacheres',
+      description: 'Approve e gerenciar professores',
+      feature: 'Gerenciar Teacheres'
     },
     {
       icon: '✅',
-      title: 'Solicitações de Professores',
-      description: 'Aprovar novas solicitações',
-      feature: 'Solicitações de Professores',
-      badge: stats.solicitacoesPendentes
+      title: 'Requests de Teacheres',
+      description: 'Approve novas solicitações',
+      feature: 'Requests de Teacheres',
+      badge: stats.solicitacoesPendings
     }
   ];
 
   const analyticsCards = [
     {
       icon: '📊',
-      title: 'Dashboard de Ocorrências',
-      description: 'Visualizar estatísticas',
-      feature: 'Dashboard de Ocorrências'
+      title: 'Dashboard de Occurrences',
+      description: 'View estatísticas',
+      feature: 'Dashboard de Occurrences'
     },
     {
       icon: '📋',
-      title: 'Relatórios',
+      title: 'Reports',
       description: 'Gerar relatórios detalhados',
-      feature: 'Relatórios'
+      feature: 'Reports'
     },
     {
       icon: '🧹',
       title: 'Limpar Dados',
-      description: 'Remover alunos órfãos (sem turma)',
+      description: 'Remove alunos órfãos (sem turma)',
       feature: 'Limpar Dados'
     }
   ];
@@ -661,7 +661,7 @@ export default function AdminPage() {
                   <svg className="w-5 h-5 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
-                  <p className="text-blue-50 font-semibold text-base">{institution?.nome || institution?.name || 'Carregando...'}</p>
+                  <p className="text-blue-50 font-semibold text-base">{institution?.nome || institution?.name || 'Loading...'}</p>
                 </div>
                 {userInstitutions.length > 1 && (
                   <div className="relative institution-dropdown">
@@ -710,7 +710,7 @@ export default function AdminPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                      {activeRole === 'admin' ? 'Admin' : 'Professor'}
+                      {activeRole === 'admin' ? 'Admin' : 'Teacher'}
                     </button>
                     
                     {showRoleDropdown && (
@@ -730,7 +730,7 @@ export default function AdminPage() {
                                 role === 'admin' ? 'bg-purple-500' : 'bg-orange-500'
                               }`}></div>
                               <span>
-                                {role === 'admin' ? 'Administrador' : 'Professor'}
+                                {role === 'admin' ? 'Administrador' : 'Teacher'}
                               </span>
                               {activeRole === role && (
                                 <svg className="w-4 h-4 ml-auto text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -745,7 +745,7 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
-              <p className="text-blue-100">Bem-vindo, {user.name}</p>
+              <p className="text-blue-100">Welcome, {user.name}</p>
             </div>
             <button
               onClick={handleLogout}
@@ -765,9 +765,9 @@ export default function AdminPage() {
                 <span className="text-2xl">👥</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total de Turmas</p>
+                <p className="text-sm font-medium text-gray-600">Total Classs</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {statsLoading ? '...' : stats.totalTurmas}
+                  {statsLoading ? '...' : stats.totalClasss}
                 </p>
               </div>
             </div>
@@ -779,9 +779,9 @@ export default function AdminPage() {
                 <span className="text-2xl">🎓</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total de Alunos</p>
+                <p className="text-sm font-medium text-gray-600">Total Students</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {statsLoading ? '...' : stats.totalAlunos}
+                  {statsLoading ? '...' : stats.totalStudents}
                 </p>
               </div>
             </div>
@@ -793,9 +793,9 @@ export default function AdminPage() {
                 <span className="text-2xl">👨‍🏫</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total de Professores</p>
+                <p className="text-sm font-medium text-gray-600">Total Teacheres</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {statsLoading ? '...' : stats.totalProfessores}
+                  {statsLoading ? '...' : stats.totalTeacheres}
                 </p>
               </div>
             </div>
@@ -807,7 +807,7 @@ export default function AdminPage() {
                 <span className="text-2xl">📝</span>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Ocorrências Este Mês</p>
+                <p className="text-sm font-medium text-gray-600">Occurrences Este Mês</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {statsLoading ? '...' : stats.ocorrenciasEsteMs}
                 </p>

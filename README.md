@@ -1,73 +1,87 @@
-# Sistema de Gestão de Ocorrências Escolares
+# School Management System
 
-Sistema completo desenvolvido em Next.js 14 com TypeScript para gerenciar ocorrências disciplinares, pedagógicas e administrativas em instituições de ensino.
+A comprehensive full-stack application built with Next.js 14 and TypeScript to manage disciplinary, pedagogical, and administrative occurrences in educational institutions.
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 Technologies Used
 
-- **Next.js 14** - Framework React com App Router
-- **TypeScript** - Tipagem estática para JavaScript
-- **Tailwind CSS** - Framework de CSS utilitário
-- **Supabase** - Backend-as-a-Service (autenticação e banco de dados)
-- **ESLint** - Linter para qualidade de código
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Static typing for JavaScript
+- **Tailwind CSS** - Utility-first CSS framework
+- **Supabase** - Backend-as-a-Service (authentication and database)
+- **Apache ECharts** - Data visualization and analytics
+- **ESLint** - Code quality linter
 
-## 📦 Instalação
+## 📦 Installation
 
 ```bash
-# Clone o repositório
-cd gestao-escolar
+# Clone the repository
+git clone https://github.com/davicanada/Full-Stack-School-Management-System.git
+cd Full-Stack-School-Management-System
 
-# Instale as dependências
+# Install dependencies
 npm install
 
-# Configure as variáveis de ambiente
-# As credenciais do Supabase já estão configuradas no .env.local
+# Configure environment variables
+# Copy .env.example to .env.local and add your Supabase credentials
+cp .env.example .env.local
 
-# Execute em modo de desenvolvimento
+# Run in development mode
 npm run dev
 ```
 
-## 🌐 Acesso
+## 🌐 Access
 
-O sistema estará disponível em: http://localhost:3000
+The system will be available at: http://localhost:3000
 
-## 🎨 Funcionalidades da Interface
+## 🎨 Interface Features
 
-### Página Inicial
-- **Header responsivo** com nome do sistema e ícone educacional
-- **Botão de Login** - Abre modal para autenticação
-- **Botão Solicitar Acesso** - Formulário para novos usuários
-- **Cards informativos** sobre funcionalidades do sistema
-- **Design responsivo** que adapta a diferentes dispositivos
-- **Modo escuro** suportado
+### Landing Page
+- **Responsive header** with system name and educational icon
+- **Login button** - Opens authentication modal
+- **Request Access button** - Registration form for new users
+- **Informative cards** showcasing system features
+- **Responsive design** adapting to different devices
+- **Dark mode** supported
 
-### Modais Interativos
-- **Modal de Login** - Formulário com email e senha
-- **Modal de Solicitação** - Cadastro completo com validações
+### Interactive Modals
+- **Login modal** - Form with email and password
+- **Access request modal** - Complete registration with validations
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
-gestao-escolar/
-├── app/                    # Páginas do App Router
-│   ├── page.tsx           # Página inicial
-│   ├── layout.tsx         # Layout base
-│   └── globals.css        # Estilos globais
-├── components/             # Componentes reutilizáveis
-├── lib/                   # Utilitários e configurações
-│   └── supabase/          # Configuração do Supabase
-│       └── client.ts      # Cliente Supabase
-├── database/              # 🗄️ Database architecture & SQL
-│   ├── README.md         # Complete database documentation
-│   ├── schema.sql        # Full database schema
-│   ├── migrations/       # Versioned database migrations
+Full-Stack-School-Management-System/
+├── app/                    # App Router pages
+│   ├── admin/             # Admin dashboard pages
+│   │   ├── dashboard/    # Analytics and reports
+│   │   ├── alunos/       # Student management
+│   │   ├── professores/  # Teacher management
+│   │   └── turmas/       # Class management
+│   ├── professor/         # Professor portal pages
+│   │   ├── registrar/    # Register occurrences
+│   │   └── ocorrencias/  # View occurrences
+│   ├── master/            # Master admin page
+│   ├── api/              # API routes
+│   ├── page.tsx          # Landing page
+│   ├── layout.tsx        # Root layout
+│   └── globals.css       # Global styles
+├── components/            # Reusable components
+├── lib/                  # Utilities and configurations
+│   └── supabase/         # Supabase configuration
+│       ├── client.ts     # Client-side Supabase
+│       └── server.ts     # Server-side Supabase
+├── database/             # 🗄️ Database architecture & SQL
+│   ├── README.md        # Complete database documentation
+│   ├── schema.sql       # Full database schema
+│   ├── migrations/      # Versioned database migrations
 │   │   ├── 001_database_architecture_fixes.sql
 │   │   └── 002_trash_system.sql
-│   └── examples/         # SQL query examples
-│       └── queries.sql   # Advanced analytics & reporting queries
-├── types/                 # Tipos TypeScript
-│   └── index.ts          # Interfaces do sistema
-├── .env.local            # Variáveis de ambiente
-└── package.json          # Dependências do projeto
+│   └── examples/        # SQL query examples
+│       └── queries.sql  # Advanced analytics & reporting queries
+├── types/               # TypeScript types
+│   └── index.ts        # System interfaces
+├── .env.example        # Environment variables template
+└── package.json        # Project dependencies
 ```
 
 ## 🗄️ Database Architecture
@@ -99,51 +113,76 @@ This project features a **production-ready PostgreSQL database** with advanced f
 
 **📖 Full Documentation**: See [database/README.md](./database/README.md) for complete schema documentation, ER diagrams, and example queries.
 
-## 🔧 Scripts Disponíveis
+## 🔧 Available Scripts
 
 ```bash
-# Desenvolvimento
+# Development mode
 npm run dev
 
-# Build de produção
+# Production build
 npm run build
 
-# Iniciar produção
+# Start production server
 npm start
 
-# Linting
+# Code linting
 npm run lint
 ```
 
-## 📋 Próximos Passos
+## ✨ Key Features
 
-1. **Implementar autenticação** com Supabase Auth
-2. **Criar dashboard** para diferentes tipos de usuários
-3. **Desenvolver CRUD** de ocorrências
-4. **Implementar sistema de notificações**
-5. **Criar relatórios e analytics**
-6. **Adicionar testes unitários**
+### Multi-Role System
+- **Master Admin** - Full system control across all institutions
+- **Admin** - Complete management of their institution
+- **Professor** - Register and view student occurrences
 
-## 🎯 Tipos de Usuários
+### Student Management
+- Complete CRUD operations
+- Class assignment and transfers
+- Student history tracking
+- Soft delete with trash/recovery system
 
-- **Admin** - Controle total do sistema
-- **Coordenador** - Gestão de ocorrências e relatórios
-- **Professor** - Registro de ocorrências dos alunos
+### Occurrence Tracking
+- Customizable occurrence types per institution
+- Severity levels (low, medium, high)
+- Detailed occurrence reports
+- Teacher assignment and tracking
 
-## 🔐 Segurança
+### Analytics Dashboard
+- Real-time statistics and KPIs
+- Interactive charts with Apache ECharts
+- Monthly and yearly trends
+- Occurrence distribution analysis
+- At-risk student identification
 
-- Autenticação JWT via Supabase
-- Controle de acesso baseado em roles
-- Validação de dados no frontend e backend
-- Proteção contra ataques CSRF
+### Security Features
+- JWT authentication via Supabase
+- Row Level Security (RLS) at database level
+- Role-based access control (RBAC)
+- Frontend and backend data validation
+- CSRF protection
 
-## 📱 Responsividade
+## 🎯 User Roles
 
-O sistema foi desenvolvido com design mobile-first, garantindo uma experiência otimizada em:
+- **Master** - System administrator with access to all institutions
+- **Admin** - Institution administrator with full management capabilities
+- **Professor** - Teacher who can register and view student occurrences
+
+## 📱 Responsive Design
+
+The system features a mobile-first design approach, ensuring optimal experience on:
 - **Desktop** (1024px+)
-- **Tablet** (768px - 1023px)  
-- **Mobile** (até 767px)
+- **Tablet** (768px - 1023px)
+- **Mobile** (up to 767px)
+
+## 🚀 Live Demo
+
+[Add your demo link here if deployed]
+
+## 📝 License
+
+This project is for portfolio purposes.
 
 ---
 
-Desenvolvido com ❤️ usando as melhores práticas de desenvolvimento web moderno.
+Developed with ❤️ using modern web development best practices.

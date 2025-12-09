@@ -12,7 +12,7 @@ interface Stats {
   totalOcorrencias: number;
 }
 
-export default function ProfessorPage() {
+export default function TeacherPage() {
   const router = useRouter();
   const [user, setUser] = useState<Usuario | null>(null);
   const [institution, setInstitution] = useState<Institution | null>(null);
@@ -23,7 +23,7 @@ export default function ProfessorPage() {
   });
   const [loading, setLoading] = useState(true);
 
-  const fetchStats = async (userData: Usuario) => {
+  const fetchStats = async (userDate: Usuario) => {
     try {
       // Calcular início e fim do dia atual e do mês atual
       const now = new Date();
@@ -31,28 +31,28 @@ export default function ProfessorPage() {
       const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Buscar contadores de ocorrências do professor
+      // Search contadores de ocorrências do professor
       const [ocorrenciasHojeResult, ocorrenciasMesResult, totalOcorrenciasResult] = await Promise.all([
-        // Ocorrências hoje
+        // Occurrences hoje
         supabase
           .from('occurrences')
           .select('*', { count: 'exact', head: true })
-          .eq('teacher_id', userData.id)
+          .eq('teacher_id', userDate.id)
           .gte('occurred_at', startOfToday)
           .lt('occurred_at', endOfToday),
         
-        // Ocorrências este mês
+        // Occurrences este mês
         supabase
           .from('occurrences')
           .select('*', { count: 'exact', head: true })
-          .eq('teacher_id', userData.id)
+          .eq('teacher_id', userDate.id)
           .gte('occurred_at', startOfMonth),
         
-        // Total de ocorrências
+        // Total ocorrências
         supabase
           .from('occurrences')
           .select('*', { count: 'exact', head: true })
-          .eq('teacher_id', userData.id)
+          .eq('teacher_id', userDate.id)
       ]);
 
       setStats({
@@ -61,49 +61,49 @@ export default function ProfessorPage() {
         totalOcorrencias: totalOcorrenciasResult.count || 0
       });
     } catch (error) {
-      console.error('Erro ao carregar estatísticas do professor:', error);
-      toast.error('Erro ao carregar estatísticas');
+      console.error('Error carregar estatísticas do professor:', error);
+      toast.error('Error carregar estatísticas');
     }
   };
 
   useEffect(() => {
 
-    const loadUserInstitution = async (userData: Usuario) => {
+    const loadUserInstitution = async (userDate: Usuario) => {
       try {
-        let institutionId = userData.institution_id;
+        let institutionId = userDate.institution_id;
         
         // Se não tem institution_id direto, buscar em user_institutions
         if (!institutionId) {
           const { data: userInst, error } = await supabase
             .from('user_institutions')
             .select('institution_id')
-            .eq('user_id', userData.id)
+            .eq('user_id', userDate.id)
             .single();
           
           if (!error && userInst) {
             institutionId = userInst.institution_id;
           } else {
-            toast.error('Professor não possui instituição associada');
+            toast.error('Teacher não possui instituição associada');
             return;
           }
         }
 
-        // Buscar dados completos da instituição
-        const { data: institutionData, error } = await supabase
+        // Search dados completos da instituição
+        const { data: institutionDate, error } = await supabase
           .from('institutions')
           .select('*')
           .eq('id', institutionId)
           .single();
         
-        if (!error && institutionData) {
-          setInstitution(institutionData);
-          await fetchStats(userData);
+        if (!error && institutionDate) {
+          setInstitution(institutionDate);
+          await fetchStats(userDate);
         } else {
-          toast.error('Erro ao carregar dados da instituição');
+          toast.error('Error carregar dados da instituição');
         }
       } catch (error) {
-        console.error('Erro ao carregar instituição do professor:', error);
-        toast.error('Erro ao carregar instituição');
+        console.error('Error carregar instituição do professor:', error);
+        toast.error('Error carregar instituição');
       }
     };
 
@@ -116,30 +116,30 @@ export default function ProfessorPage() {
           return;
         }
 
-        let userData;
+        let userDate;
         try {
-          userData = JSON.parse(storedUser);
+          userDate = JSON.parse(storedUser);
         } catch (parseError) {
-          console.error('Erro ao fazer parse dos dados do usuário:', parseError);
+          console.error('Error fazer parse dos dados do usuário:', parseError);
           localStorage.removeItem('user');
           router.push('/');
           return;
         }
         
         // Verificar se tem role de professor
-        if (!userData || userData.role !== 'professor') {
+        if (!userDate || userDate.role !== 'professor') {
           toast.error('Acesso negado. Apenas professores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userData);
+        setUser(userDate);
         
-        // Buscar a instituição do professor
-        await loadUserInstitution(userData);
+        // Search a instituição do professor
+        await loadUserInstitution(userDate);
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Erro ao verificar autenticação');
+        toast.error('Error verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -159,17 +159,17 @@ export default function ProfessorPage() {
       toast.success('Logout realizado com sucesso');
       router.push('/');
     } catch {
-      toast.error('Erro ao fazer logout');
+      toast.error('Error fazer logout');
     }
   };
 
   const handleCardClick = (feature: string) => {
-    if (feature === 'Registrar Ocorrência') {
+    if (feature === 'Registrar Occurrence') {
       window.location.href = '/professor/registrar';
-    } else if (feature === 'Minhas Ocorrências') {
+    } else if (feature === 'Minhas Occurrences') {
       window.location.href = '/professor/ocorrencias';
-    } else if (feature === 'Estatísticas') {
-      toast('Funcionalidade em desenvolvimento: Estatísticas Detalhadas', { icon: '🚧', duration: 3000 });
+    } else if (feature === 'Statistics') {
+      toast('Funcionalidade em desenvolvimento: Statistics Detalhadas', { icon: '🚧', duration: 3000 });
     }
   };
 
@@ -179,7 +179,7 @@ export default function ProfessorPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-orange-600 dark:text-orange-400 font-medium">Carregando área do professor...</p>
+          <p className="text-orange-600 dark:text-orange-400 font-medium">Loading área do professor...</p>
         </div>
       </div>
     );
@@ -193,16 +193,16 @@ export default function ProfessorPage() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                📚 Sistema Escolar - Professor
+                📚 Sistema Escolar - Teacher
               </h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Informações do Usuário */}
+              {/* Informações do User */}
               <div className="flex items-center space-x-3">
                 <div className="text-right">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                  <p className="text-xs text-orange-600 dark:text-orange-400">Professor</p>
+                  <p className="text-xs text-orange-600 dark:text-orange-400">Teacher</p>
                 </div>
                 
                 <button
@@ -222,7 +222,7 @@ export default function ProfessorPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Instituição Atual */}
+        {/* Institution Atual */}
         {institution && (
           <div className="mb-6">
             <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-orange-200 dark:border-gray-700">
@@ -241,7 +241,7 @@ export default function ProfessorPage() {
           </div>
         )}
 
-        {/* Resumo Estatísticas */}
+        {/* Resumo Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-green-200 dark:border-gray-700">
             <div className="flex items-center">
@@ -251,7 +251,7 @@ export default function ProfessorPage() {
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Ocorrências Hoje</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Occurrences Hoje</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.ocorrenciasHoje}</p>
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function ProfessorPage() {
         {/* Cards de Ação */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <button
-            onClick={() => handleCardClick('Registrar Ocorrência')}
+            onClick={() => handleCardClick('Registrar Occurrence')}
             className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-green-200 dark:border-gray-700 hover:shadow-md transition-all hover:border-green-300 dark:hover:border-green-600 text-left"
           >
             <div className="flex items-center mb-4">
@@ -298,13 +298,13 @@ export default function ProfessorPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <h3 className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">Registrar Ocorrência</h3>
+              <h3 className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">Registrar Occurrence</h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Registre uma nova ocorrência disciplinar ou comportamental
             </p>
             <div className="flex items-center text-green-600 dark:text-green-400">
-              <span className="text-sm font-medium">Novo registro</span>
+              <span className="text-sm font-medium">New registro</span>
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -312,7 +312,7 @@ export default function ProfessorPage() {
           </button>
 
           <button
-            onClick={() => handleCardClick('Minhas Ocorrências')}
+            onClick={() => handleCardClick('Minhas Occurrences')}
             className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-blue-200 dark:border-gray-700 hover:shadow-md transition-all hover:border-blue-300 dark:hover:border-blue-600 text-left"
           >
             <div className="flex items-center mb-4">
@@ -321,7 +321,7 @@ export default function ProfessorPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <h3 className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">Minhas Ocorrências</h3>
+              <h3 className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">Minhas Occurrences</h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Visualize e gerencie todas as ocorrências registradas por você
@@ -335,7 +335,7 @@ export default function ProfessorPage() {
           </button>
 
           <button
-            onClick={() => handleCardClick('Estatísticas')}
+            onClick={() => handleCardClick('Statistics')}
             className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-purple-200 dark:border-gray-700 hover:shadow-md transition-all hover:border-purple-300 dark:hover:border-purple-600 text-left"
           >
             <div className="flex items-center mb-4">
@@ -344,7 +344,7 @@ export default function ProfessorPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2 2z" />
                 </svg>
               </div>
-              <h3 className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">Estatísticas</h3>
+              <h3 className="ml-4 text-lg font-semibold text-gray-900 dark:text-white">Statistics</h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Visualize relatórios e análises detalhadas das ocorrências
@@ -358,7 +358,7 @@ export default function ProfessorPage() {
           </button>
         </div>
 
-        {/* Estado Vazio */}
+        {/* State Vazio */}
         {stats.totalOcorrencias === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
             <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -370,7 +370,7 @@ export default function ProfessorPage() {
               Nenhuma ocorrência registrada
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Você ainda não registrou nenhuma ocorrência. Use o botão "Registrar Ocorrência" acima para começar.
+              Você ainda não registrou nenhuma ocorrência. Use o botão "Registrar Occurrence" acima para começar.
             </p>
           </div>
         )}

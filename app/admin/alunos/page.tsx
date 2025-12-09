@@ -29,14 +29,14 @@ interface Student {
   deleted_by?: string | null;
 }
 
-interface StudentFormData {
+interface StudentFormDate {
   name: string;
   registration_number: string;
   class_id: string;
   is_active: boolean;
 }
 
-interface ImportData {
+interface ImportDate {
   name: string;
   registration_number?: string;
   error?: string;
@@ -80,7 +80,7 @@ interface StudentToImport {
   is_active: boolean;
 }
 
-export default function AlunosPage() {
+export default function StudentsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<Usuario | null>(null);
@@ -102,7 +102,7 @@ export default function AlunosPage() {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [changingClassStudent, setChangingClassStudent] = useState<Student | null>(null);
   const [newClassId, setNewClassId] = useState<string>('');
-  const [formData, setFormData] = useState<StudentFormData>({
+  const [formDate, setFormDate] = useState<StudentFormDate>({
     name: '',
     registration_number: '',
     class_id: '',
@@ -112,9 +112,9 @@ export default function AlunosPage() {
   // Import states
   const [, setImportFile] = useState<File | null>(null);
   const [importClassId, setImportClassId] = useState<string>('');
-  const [previewData, setPreviewData] = useState<ImportData[]>([]);
+  const [previewDate, setPreviewDate] = useState<ImportDate[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
-  const [isValidatingData, setIsValidatingData] = useState(false);
+  const [isValidatingDate, setIsValidatingDate] = useState(false);
 
   const fetchClasses = useCallback(async (institutionId: string) => {
     try {
@@ -126,15 +126,15 @@ export default function AlunosPage() {
         .order('name');
 
       if (error) {
-        console.error('Erro ao buscar turmas:', error);
-        toast.error('Erro ao carregar turmas');
+        console.error('Error buscar turmas:', error);
+        toast.error('Error carregar turmas');
         return;
       }
 
       setClasses(data || []);
     } catch (error) {
-      console.error('Erro ao buscar turmas:', error);
-      toast.error('Erro ao carregar turmas');
+      console.error('Error buscar turmas:', error);
+      toast.error('Error carregar turmas');
     }
   }, []);
 
@@ -148,15 +148,15 @@ export default function AlunosPage() {
         .order('name');
 
       if (error) {
-        console.error('Erro ao buscar alunos:', error);
-        toast.error('Erro ao carregar alunos');
+        console.error('Error buscar alunos:', error);
+        toast.error('Error carregar alunos');
         return;
       }
 
       setStudents(data || []);
     } catch (error) {
-      console.error('Erro ao buscar alunos:', error);
-      toast.error('Erro ao carregar alunos');
+      console.error('Error buscar alunos:', error);
+      toast.error('Error carregar alunos');
     }
   }, []);
 
@@ -170,15 +170,15 @@ export default function AlunosPage() {
         .order('deleted_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar alunos na lixeira:', error);
-        toast.error('Erro ao carregar lixeira');
+        console.error('Error buscar alunos na lixeira:', error);
+        toast.error('Error carregar lixeira');
         return;
       }
 
       setTrashedStudents(data || []);
     } catch (error) {
-      console.error('Erro ao buscar alunos na lixeira:', error);
-      toast.error('Erro ao carregar lixeira');
+      console.error('Error buscar alunos na lixeira:', error);
+      toast.error('Error carregar lixeira');
     }
   }, []);
 
@@ -192,36 +192,36 @@ export default function AlunosPage() {
           return;
         }
 
-        const userData = JSON.parse(storedUser);
+        const userDate = JSON.parse(storedUser);
         
-        if (!userData || userData.role !== 'admin') {
+        if (!userDate || userDate.role !== 'admin') {
           toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userData);
+        setUser(userDate);
 
-        const { data: institutionData, error: institutionError } = await supabase
+        const { data: institutionDate, error: institutionError } = await supabase
           .from('institutions')
           .select('*')
-          .eq('id', userData.institution_id)
+          .eq('id', userDate.institution_id)
           .single();
 
         if (institutionError) {
-          toast.error('Erro ao carregar dados da instituição');
+          toast.error('Error carregar dados da instituição');
         } else {
-          setInstitution(institutionData);
+          setInstitution(institutionDate);
         }
 
         await Promise.all([
-          fetchClasses(userData.institution_id),
-          fetchStudents(userData.institution_id),
-          fetchTrashedStudents(userData.institution_id)
+          fetchClasses(userDate.institution_id),
+          fetchStudents(userDate.institution_id),
+          fetchTrashedStudents(userDate.institution_id)
         ]);
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Erro ao verificar autenticação');
+        toast.error('Error verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -282,12 +282,12 @@ export default function AlunosPage() {
     if (!user) return;
 
     try {
-      if (!formData.name.trim() || !formData.class_id) {
-        toast.error('Nome e turma são obrigatórios');
+      if (!formDate.name.trim() || !formDate.class_id) {
+        toast.error('Name e turma são obrigatórios');
         return;
       }
 
-      const registrationNumber = formData.registration_number.trim() || generateRegistrationNumber();
+      const registrationNumber = formDate.registration_number.trim() || generateRegistrationNumber();
 
       // Check if registration number already exists
       const { data: existingStudent } = await supabase
@@ -306,31 +306,31 @@ export default function AlunosPage() {
         .from('students')
         .insert([
           {
-            name: formData.name.trim(),
+            name: formDate.name.trim(),
             registration_number: registrationNumber,
-            class_id: formData.class_id,
+            class_id: formDate.class_id,
             institution_id: user.institution_id,
-            is_active: formData.is_active,
+            is_active: formDate.is_active,
           }
         ])
         .select()
         .single();
 
       if (error) {
-        console.error('Erro ao criar aluno:', error);
-        toast.error('Erro ao criar aluno');
+        console.error('Error criar aluno:', error);
+        toast.error('Error criar aluno');
         return;
       }
 
-      toast.success('Aluno criado com sucesso!');
+      toast.success('Student created successfully!');
       setShowModal(false);
       resetForm();
       if (user?.institution_id) {
         await fetchStudents(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao criar aluno:', error);
-      toast.error('Erro ao criar aluno');
+      console.error('Error criar aluno:', error);
+      toast.error('Error criar aluno');
     }
   };
 
@@ -338,12 +338,12 @@ export default function AlunosPage() {
     if (!user || !editingStudent) return;
 
     try {
-      if (!formData.name.trim() || !formData.class_id) {
-        toast.error('Nome e turma são obrigatórios');
+      if (!formDate.name.trim() || !formDate.class_id) {
+        toast.error('Name e turma são obrigatórios');
         return;
       }
 
-      const registrationNumber = formData.registration_number.trim() || generateRegistrationNumber();
+      const registrationNumber = formDate.registration_number.trim() || generateRegistrationNumber();
 
       // Check if registration number already exists (excluding current student)
       const { data: existingStudent } = await supabase
@@ -362,20 +362,20 @@ export default function AlunosPage() {
       const { error } = await supabase
         .from('students')
         .update({
-          name: formData.name.trim(),
+          name: formDate.name.trim(),
           registration_number: registrationNumber,
-          class_id: formData.class_id,
-          is_active: formData.is_active,
+          class_id: formDate.class_id,
+          is_active: formDate.is_active,
         })
         .eq('id', editingStudent.id);
 
       if (error) {
-        console.error('Erro ao atualizar aluno:', error);
-        toast.error('Erro ao atualizar aluno');
+        console.error('Error atualizar aluno:', error);
+        toast.error('Error atualizar aluno');
         return;
       }
 
-      toast.success('Aluno atualizado com sucesso!');
+      toast.success('Student updated successfully!');
       setShowModal(false);
       setEditingStudent(null);
       resetForm();
@@ -383,8 +383,8 @@ export default function AlunosPage() {
         await fetchStudents(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao atualizar aluno:', error);
-      toast.error('Erro ao atualizar aluno');
+      console.error('Error atualizar aluno:', error);
+      toast.error('Error atualizar aluno');
     }
   };
 
@@ -393,7 +393,7 @@ export default function AlunosPage() {
     if (!user) return;
 
     const confirmed = window.confirm(
-      `Tem certeza que deseja mover ${student.name} para a lixeira?\n\n` +
+      `Are you sure you want to mover ${student.name} para a lixeira?\n\n` +
       `O aluno será desativado automaticamente e poderá ser restaurado depois.`
     );
     if (!confirmed) return;
@@ -409,8 +409,8 @@ export default function AlunosPage() {
         .eq('id', student.id);
 
       if (error) {
-        console.error('Erro ao mover aluno para lixeira:', error);
-        toast.error('Erro ao mover para lixeira');
+        console.error('Error mover aluno para lixeira:', error);
+        toast.error('Error mover para lixeira');
         return;
       }
 
@@ -420,8 +420,8 @@ export default function AlunosPage() {
         await fetchTrashedStudents(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao mover aluno para lixeira:', error);
-      toast.error('Erro ao mover para lixeira');
+      console.error('Error mover aluno para lixeira:', error);
+      toast.error('Error mover para lixeira');
     }
   };
 
@@ -429,7 +429,7 @@ export default function AlunosPage() {
     if (!user) return;
 
     const confirmed = window.confirm(
-      `Restaurar ${student.name} da lixeira?\n\n` +
+      `Restore ${student.name} da lixeira?\n\n` +
       `O aluno será reativado automaticamente.`
     );
     if (!confirmed) return;
@@ -445,8 +445,8 @@ export default function AlunosPage() {
         .eq('id', student.id);
 
       if (error) {
-        console.error('Erro ao restaurar aluno:', error);
-        toast.error('Erro ao restaurar aluno');
+        console.error('Error restaurar aluno:', error);
+        toast.error('Error restaurar aluno');
         return;
       }
 
@@ -456,8 +456,8 @@ export default function AlunosPage() {
         await fetchTrashedStudents(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao restaurar aluno:', error);
-      toast.error('Erro ao restaurar aluno');
+      console.error('Error restaurar aluno:', error);
+      toast.error('Error restaurar aluno');
     }
   };
 
@@ -465,7 +465,7 @@ export default function AlunosPage() {
     if (!user) return;
 
     const confirmDelete = window.confirm(
-      `ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE ${student.name}?\n\n` +
+      `ATENÇÃO: Are you sure you want to EXCLUIR PERMANENTEMENTE ${student.name}?\n\n` +
       `Esta ação NÃO PODE SER DESFEITA.`
     );
 
@@ -481,7 +481,7 @@ export default function AlunosPage() {
       if (occurrencesError) throw occurrencesError;
 
       if (occurrences && occurrences.length > 0) {
-        toast.error(`Não é possível excluir. Existem ${occurrences.length} ocorrência(s) registrada(s) para este aluno.`);
+        toast.error(`No é possível excluir. Existem ${occurrences.length} ocorrência(s) registrada(s) para este aluno.`);
         return;
       }
 
@@ -498,8 +498,8 @@ export default function AlunosPage() {
         await fetchTrashedStudents(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao deletar aluno:', error);
-      toast.error('Erro ao deletar aluno');
+      console.error('Error deletar aluno:', error);
+      toast.error('Error deletar aluno');
     }
   };
 
@@ -532,12 +532,12 @@ export default function AlunosPage() {
           hint: updateError.hint,
           code: updateError.code
         });
-        toast.error(`Erro ao mudar aluno de turma: ${updateError.message}`);
+        toast.error(`Error mudar aluno de turma: ${updateError.message}`);
         return;
       }
 
       console.log('✅ Mudança de turma bem-sucedida:', data);
-      toast.success('Aluno transferido de turma com sucesso!');
+      toast.success('Student transferido de turma com sucesso!');
       setShowChangeClassModal(false);
       setChangingClassStudent(null);
       setNewClassId('');
@@ -546,7 +546,7 @@ export default function AlunosPage() {
       }
     } catch (error) {
       console.error('❌ Erro excepcional ao mudar turma:', error);
-      toast.error(`Erro ao mudar aluno de turma: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+      toast.error(`Error mudar aluno de turma: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
     }
   };
 
@@ -588,13 +588,13 @@ export default function AlunosPage() {
         const worksheet = workbook.Sheets[sheetName];
         
         // Converter para JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        const jsonDate = XLSX.utils.sheet_to_json(worksheet, {
           header: ['name', 'registration_number'],
           defval: '',
           raw: false
         });
 
-        const parsedData: ImportData[] = (jsonData as XlsxRow[])
+        const parsedDate: ImportDate[] = (jsonDate as XlsxRow[])
           .filter((row: XlsxRow, index) => {
             // Pular primeira linha se parecer cabeçalho
             if (index === 0 && (row.name?.toLowerCase().includes('nome') || row.name?.toLowerCase().includes('name'))) {
@@ -607,11 +607,11 @@ export default function AlunosPage() {
             registration_number: row.registration_number?.toString().trim() || '',
           }));
 
-        setPreviewData(parsedData);
+        setPreviewDate(parsedDate);
         
         // Validar dados após carregar
-        if (parsedData.length > 0) {
-          validateImportData(parsedData);
+        if (parsedDate.length > 0) {
+          validateImportDate(parsedDate);
         }
       };
       
@@ -632,7 +632,7 @@ export default function AlunosPage() {
         // Skip header if present
         const dataLines = lines[0].toLowerCase().includes('nome') || lines[0].toLowerCase().includes('name') ? lines.slice(1) : lines;
         
-        const parsedData: ImportData[] = dataLines.map((line) => {
+        const parsedDate: ImportDate[] = dataLines.map((line) => {
           const columns = line.split(/[,;]/).map(col => col.trim().replace(/"/g, ''));
           
           if (columns.length < 1) {
@@ -648,11 +648,11 @@ export default function AlunosPage() {
           };
         }).filter(item => item.name);
 
-        setPreviewData(parsedData);
+        setPreviewDate(parsedDate);
         
         // Validar dados após carregar
-        if (parsedData.length > 0) {
-          validateImportData(parsedData);
+        if (parsedDate.length > 0) {
+          validateImportDate(parsedDate);
         }
       };
 
@@ -660,13 +660,13 @@ export default function AlunosPage() {
     }
   };
 
-  const validateImportData = async (data: ImportData[]) => {
+  const validateImportDate = async (data: ImportDate[]) => {
     if (!user) return;
     
-    setIsValidatingData(true);
+    setIsValidatingDate(true);
     
     try {
-      // Buscar todas as matrículas existentes com informações dos alunos e turmas
+      // Search todas as matrículas existentes com informações dos alunos e turmas
       const { data: existingStudents } = await supabase
         .from('students')
         .select(`
@@ -684,34 +684,34 @@ export default function AlunosPage() {
       );
 
       // Validar cada item dos dados
-      const validatedData = data.map(item => {
+      const validatedDate = data.map(item => {
         if (item.registration_number && existingMatriculasMap.has(item.registration_number)) {
           const existing = existingMatriculasMap.get(item.registration_number)!;
           return {
             ...item,
             hasError: true,
-            errorMessage: `Matrícula ${item.registration_number} já pertence ao aluno &apos;${existing.name}&apos; da turma &apos;${existing.className}&apos;`
+            errorMessage: `Registration ${item.registration_number} já pertence ao aluno &apos;${existing.name}&apos; da turma &apos;${existing.className}&apos;`
           };
         }
         return { ...item, hasError: false };
       });
 
-      setPreviewData(validatedData);
+      setPreviewDate(validatedDate);
     } catch (error) {
-      console.error('Erro ao validar dados:', error);
+      console.error('Error validar dados:', error);
     } finally {
-      setIsValidatingData(false);
+      setIsValidatingDate(false);
     }
   };
 
   const handleImportStudents = async () => {
-    if (!user || !importClassId || previewData.length === 0) {
-      toast.error('Selecione uma turma e carregue dados válidos');
+    if (!user || !importClassId || previewDate.length === 0) {
+      toast.error('Select uma turma e carregue dados válidos');
       return;
     }
 
     try {
-      // Buscar todas as matrículas existentes com informações completas
+      // Search todas as matrículas existentes com informações completas
       const { data: existingStudents } = await supabase
         .from('students')
         .select(`
@@ -733,7 +733,7 @@ export default function AlunosPage() {
       const studentsToImport: StudentToImport[] = [];
       const duplicateErrors: DuplicateInfo[] = [];
       const generalErrors: string[] = [];
-      const studentsWithoutMatricula = previewData.filter(item => !item.registration_number?.trim() && !item.hasError);
+      const studentsWithoutMatricula = previewDate.filter(item => !item.registration_number?.trim() && !item.hasError);
       
       // Gerar matrículas únicas para alunos sem matrícula
       const generatedMatriculas = studentsWithoutMatricula.length > 0 
@@ -743,7 +743,7 @@ export default function AlunosPage() {
       let generatedIndex = 0;
 
       // Processar apenas alunos sem erro
-      for (const item of previewData.filter(item => !item.hasError)) {
+      for (const item of previewDate.filter(item => !item.hasError)) {
         let registrationNumber: string;
         
         if (item.registration_number?.trim()) {
@@ -773,7 +773,7 @@ export default function AlunosPage() {
           is_active: true,
         });
         
-        // Adicionar à lista local para evitar duplicatas internas
+        // Add à lista local para evitar duplicatas internas
         existingMatriculas.add(registrationNumber);
       }
 
@@ -785,7 +785,7 @@ export default function AlunosPage() {
           .select();
 
         if (error) {
-          console.error('Erro ao importar alunos:', error);
+          console.error('Error importar alunos:', error);
           generalErrors.push('Erro no banco de dados ao importar alguns alunos');
         } else {
           importedCount = data.length;
@@ -818,23 +818,23 @@ export default function AlunosPage() {
         await fetchStudents(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao importar alunos:', error);
-      toast.error('Erro ao importar alunos');
+      console.error('Error importar alunos:', error);
+      toast.error('Error importar alunos');
     }
   };
 
   const closeImportModal = () => {
     setShowImportModal(false);
     setImportFile(null);
-    setPreviewData([]);
+    setPreviewDate([]);
     setImportClassId('');
     setImportResult(null);
-    setIsValidatingData(false);
+    setIsValidatingDate(false);
   };
 
   const handleEdit = (student: Student) => {
     setEditingStudent(student);
-    setFormData({
+    setFormDate({
       name: student.name,
       registration_number: student.registration_number,
       class_id: student.class_id,
@@ -859,7 +859,7 @@ export default function AlunosPage() {
   };
 
   const resetForm = () => {
-    setFormData({
+    setFormDate({
       name: '',
       registration_number: '',
       class_id: '',
@@ -879,7 +879,7 @@ export default function AlunosPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -903,10 +903,10 @@ export default function AlunosPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Voltar
+                Back
               </button>
               <div>
-                <h1 className="text-2xl font-bold">Gerenciar Alunos</h1>
+                <h1 className="text-2xl font-bold">Gerenciar Students</h1>
                 <p className="text-blue-100">{institution.nome}</p>
               </div>
             </div>
@@ -927,7 +927,7 @@ export default function AlunosPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Novo Aluno
+                New Student
               </button>
             </div>
           </div>
@@ -939,7 +939,7 @@ export default function AlunosPage() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <div className="flex items-center gap-4">
             <label htmlFor="class-filter" className="text-sm font-medium text-gray-700">
-              Filtrar por turma:
+              Filter por turma:
             </label>
             <select
               id="class-filter"
@@ -973,7 +973,7 @@ export default function AlunosPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Alunos Ativos
+              Students Actives
               <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs font-medium">
                 {students.length}
               </span>
@@ -986,7 +986,7 @@ export default function AlunosPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              🗑️ Lixeira
+              🗑️ Trash
               {trashedStudents.length > 0 && (
                 <span className="ml-2 bg-orange-100 text-orange-800 py-0.5 px-2.5 rounded-full text-xs font-medium">
                   {trashedStudents.length}
@@ -1012,13 +1012,13 @@ export default function AlunosPage() {
               {selectedClassFilter ? 'Nenhum aluno na turma selecionada' : 'Nenhum aluno cadastrado'}
             </h3>
             <p className="text-gray-500 mb-6">
-              {selectedClassFilter ? 'Selecione outra turma ou' : 'Comece'} {selectedClassFilter ? 'crie' : 'criando'} seu primeiro aluno
+              {selectedClassFilter ? 'Select outra turma ou' : 'Comece'} {selectedClassFilter ? 'crie' : 'criando'} seu primeiro aluno
             </p>
             <button
               onClick={() => setShowModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
             >
-              Criar Novo Aluno
+              Create New Student
             </button>
           </div>
         ) : (
@@ -1028,16 +1028,16 @@ export default function AlunosPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Nome do Aluno
+                      Name do Student
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Matrícula
+                      Registration
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Turma
+                      Class
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ações
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -1055,18 +1055,18 @@ export default function AlunosPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">
-                          {/* Botão Editar */}
+                          {/* Botão Edit */}
                           <button
                             onClick={() => handleEdit(student)}
                             className="text-blue-600 hover:text-blue-900 transition-colors"
-                            title="Editar aluno"
+                            title="Edit aluno"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
 
-                          {/* Botão Mudar de Turma */}
+                          {/* Botão Mudar de Class */}
                           <button
                             onClick={() => handleOpenChangeClass(student)}
                             className="text-purple-600 hover:text-purple-900 transition-colors"
@@ -1077,7 +1077,7 @@ export default function AlunosPage() {
                             </svg>
                           </button>
 
-                          {/* Botão Lixeira - Todos podem usar */}
+                          {/* Botão Trash - Todos podem usar */}
                           <button
                             onClick={() => handleMoveToTrash(student)}
                             className="text-orange-600 hover:text-orange-900 transition-colors"
@@ -1088,12 +1088,12 @@ export default function AlunosPage() {
                             </svg>
                           </button>
 
-                          {/* Botão Deletar Permanentemente - APENAS Master */}
+                          {/* Botão Delete Permanentemente - APENAS Master */}
                           {user.role === 'master' && (
                             <button
                               onClick={() => handleDeleteStudent(student)}
                               className="text-red-600 hover:text-red-900 transition-colors"
-                              title="Deletar PERMANENTEMENTE (apenas Master)"
+                              title="Delete PERMANENTEMENTE (apenas Master)"
                             >
                               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                 <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -1115,14 +1115,14 @@ export default function AlunosPage() {
         {/* Trash Section */}
         {activeTab === 'trash' && (
           <div>
-            {/* Info sobre Lixeira */}
+            {/* Info sobre Trash */}
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-sm text-orange-800">
-                  <strong>Lixeira:</strong> Alunos removidos mas que podem ser restaurados.
+                  <strong>Trash:</strong> Students removidos mas que podem ser restaurados.
                   {user.role === 'master' && <span className="ml-1">Como Master, você pode deletar permanentemente.</span>}
                 </span>
               </div>
@@ -1136,10 +1136,10 @@ export default function AlunosPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Lixeira vazia
+                  Trash vazia
                 </h3>
                 <p className="text-gray-500">
-                  Alunos movidos para a lixeira aparecerão aqui
+                  Students movidos para a lixeira aparecerão aqui
                 </p>
               </div>
             ) : (
@@ -1147,11 +1147,11 @@ export default function AlunosPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aluno</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Matrícula</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Turma</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registration</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Removido em</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -1171,29 +1171,29 @@ export default function AlunosPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex justify-end gap-2">
-                            {/* Botão Restaurar - Todos */}
+                            {/* Botão Restore - Todos */}
                             <button
                               onClick={() => handleRestoreFromTrash(student)}
                               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
-                              title="Restaurar aluno"
+                              title="Restore aluno"
                             >
                               <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                               </svg>
-                              Restaurar
+                              Restore
                             </button>
 
-                            {/* Botão Deletar - Apenas Master */}
+                            {/* Botão Delete - Apenas Master */}
                             {user.role === 'master' && (
                               <button
                                 onClick={() => handleDeleteStudent(student)}
                                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
-                                title="Deletar PERMANENTEMENTE"
+                                title="Delete PERMANENTEMENTE"
                               >
                                 <svg className="w-4 h-4 inline mr-1" fill="currentColor" viewBox="0 0 24 24">
                                   <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
-                                Deletar
+                                Delete
                               </button>
                             )}
                           </div>
@@ -1214,7 +1214,7 @@ export default function AlunosPage() {
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {editingStudent ? 'Editar Aluno' : 'Novo Aluno'}
+                {editingStudent ? 'Edit Student' : 'New Student'}
               </h3>
               <button
                 onClick={closeModal}
@@ -1228,13 +1228,13 @@ export default function AlunosPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome Completo *
+                  Name Completo *
                 </label>
                 <input
                   type="text"
                   id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formDate.name}
+                  onChange={(e) => setFormDate({ ...formDate, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Digite o nome completo do aluno"
                   required
@@ -1242,29 +1242,29 @@ export default function AlunosPage() {
               </div>
               <div>
                 <label htmlFor="registration" className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Matrícula
+                  Número de Registration
                 </label>
                 <input
                   type="text"
                   id="registration"
-                  value={formData.registration_number}
-                  onChange={(e) => setFormData({ ...formData, registration_number: e.target.value })}
+                  value={formDate.registration_number}
+                  onChange={(e) => setFormDate({ ...formDate, registration_number: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Deixe vazio para gerar automaticamente"
                 />
               </div>
               <div>
                 <label htmlFor="class_id" className="block text-sm font-medium text-gray-700 mb-1">
-                  Turma *
+                  Class *
                 </label>
                 <select
                   id="class_id"
-                  value={formData.class_id}
-                  onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
+                  value={formDate.class_id}
+                  onChange={(e) => setFormDate({ ...formDate, class_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="">Selecione uma turma</option>
+                  <option value="">Select uma turma</option>
                   {classes.map((classItem) => (
                     <option key={classItem.id} value={classItem.id}>
                       {classItem.name}
@@ -1276,12 +1276,12 @@ export default function AlunosPage() {
                 <input
                   type="checkbox"
                   id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  checked={formDate.is_active}
+                  onChange={(e) => setFormDate({ ...formDate, is_active: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
-                  Aluno ativo
+                  Student ativo
                 </label>
               </div>
               <div className="flex gap-3 pt-4">
@@ -1290,13 +1290,13 @@ export default function AlunosPage() {
                   onClick={closeModal}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  {editingStudent ? 'Salvar' : 'Criar'}
+                  {editingStudent ? 'Save' : 'Create'}
                 </button>
               </div>
             </form>
@@ -1309,7 +1309,7 @@ export default function AlunosPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Mudar Aluno de Turma</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Mudar Student de Class</h3>
               <button
                 onClick={() => {
                   setShowChangeClassModal(false);
@@ -1326,7 +1326,7 @@ export default function AlunosPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Aluno
+                  Student
                 </label>
                 <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md">
                   {changingClassStudent.name}
@@ -1334,7 +1334,7 @@ export default function AlunosPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Turma Atual
+                  Class Atual
                 </label>
                 <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md">
                   {changingClassStudent.classes?.name || 'Sem turma'}
@@ -1342,7 +1342,7 @@ export default function AlunosPage() {
               </div>
               <div>
                 <label htmlFor="new_class_id" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nova Turma *
+                  New Class *
                 </label>
                 <select
                   id="new_class_id"
@@ -1351,7 +1351,7 @@ export default function AlunosPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="">Selecione a nova turma</option>
+                  <option value="">Select a nova turma</option>
                   {classes
                     .filter(c => c.id !== changingClassStudent.class_id)
                     .map((classItem) => (
@@ -1371,7 +1371,7 @@ export default function AlunosPage() {
                   }}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -1379,7 +1379,7 @@ export default function AlunosPage() {
                   disabled={!newClassId}
                   className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  Confirmar Mudança
+                  Confirm Mudança
                 </button>
               </div>
             </div>
@@ -1392,7 +1392,7 @@ export default function AlunosPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Importar Alunos</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Importar Students</h3>
               <button
                 onClick={closeImportModal}
                 className="text-gray-400 hover:text-gray-600"
@@ -1419,8 +1419,8 @@ export default function AlunosPage() {
                     <span>📊</span>
                     <div>
                       <strong>Estrutura obrigatória:</strong><br/>
-                      Coluna 1: Nome do Aluno<br/>
-                      Coluna 2: Matrícula (opcional - será gerada se vazia)
+                      Coluna 1: Name do Student<br/>
+                      Coluna 2: Registration (opcional - será gerada se vazia)
                     </div>
                   </div>
                   <div className="flex items-start gap-2">
@@ -1440,7 +1440,7 @@ export default function AlunosPage() {
                       • Primeira linha deve conter os dados (sem cabeçalho)<br/>
                       • Use vírgula como separador no CSV<br/>
                       • Todos os alunos serão adicionados à turma selecionada<br/>
-                      • Alunos com matrícula duplicada serão ignorados
+                      • Students com matrícula duplicada serão ignorados
                     </div>
                   </div>
                 </div>
@@ -1456,7 +1456,7 @@ export default function AlunosPage() {
 
               <div>
                 <label htmlFor="import_class" className="block text-sm font-medium text-gray-700 mb-1">
-                  Turma de Destino *
+                  Class de Destino *
                 </label>
                 <select
                   id="import_class"
@@ -1465,7 +1465,7 @@ export default function AlunosPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="">Selecione a turma para importar</option>
+                  <option value="">Select a turma para importar</option>
                   {classes.map((classItem) => (
                     <option key={classItem.id} value={classItem.id}>
                       {classItem.name}
@@ -1489,14 +1489,14 @@ export default function AlunosPage() {
                 </p>
               </div>
               
-              {previewData.length > 0 && (
+              {previewDate.length > 0 && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-sm font-medium text-gray-700">
-                      📄 Preview dos Dados ({previewData.length} aluno{previewData.length !== 1 ? 's' : ''}):
+                      📄 Preview dos Dados ({previewDate.length} aluno{previewDate.length !== 1 ? 's' : ''}):
                     </h4>
                     <div className="flex gap-2">
-                      {isValidatingData && (
+                      {isValidatingDate && (
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded flex items-center gap-1">
                           <div className="w-3 h-3 border border-yellow-600 border-t-transparent rounded-full animate-spin"></div>
                           Validando...
@@ -1513,12 +1513,12 @@ export default function AlunosPage() {
                         <tr>
                           <th className="px-3 py-2 text-left font-medium text-gray-700">#</th>
                           <th className="px-3 py-2 text-left font-medium text-gray-700">Status</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700">Nome</th>
-                          <th className="px-3 py-2 text-left font-medium text-gray-700">Matrícula</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700">Name</th>
+                          <th className="px-3 py-2 text-left font-medium text-gray-700">Registration</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {previewData.slice(0, 5).map((item, index) => (
+                        {previewDate.slice(0, 5).map((item, index) => (
                           <tr key={index} className={`border-t ${
                             item.hasError 
                               ? 'bg-red-50' 
@@ -1550,19 +1550,19 @@ export default function AlunosPage() {
                         ))}
                       </tbody>
                     </table>
-                    {previewData.length > 5 && (
+                    {previewDate.length > 5 && (
                       <div className="px-3 py-2 text-gray-500 text-center border-t bg-gray-50 font-medium">
-                        ... e mais {previewData.length - 5} aluno{previewData.length - 5 !== 1 ? 's' : ''}
+                        ... e mais {previewDate.length - 5} aluno{previewDate.length - 5 !== 1 ? 's' : ''}
                       </div>
                     )}
                   </div>
                   
                   {/* Mostrar erros encontrados no preview */}
-                  {previewData.some(item => item.hasError) && (
+                  {previewDate.some(item => item.hasError) && (
                     <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded">
                       <h5 className="text-sm font-medium text-red-800 mb-2">❌ Problemas encontrados:</h5>
                       <div className="space-y-1 text-xs">
-                        {previewData
+                        {previewDate
                           .filter(item => item.hasError)
                           .slice(0, 3)
                           .map((item, index) => (
@@ -1570,9 +1570,9 @@ export default function AlunosPage() {
                               • <strong>{item.name}</strong>: {item.errorMessage}
                             </div>
                           ))}
-                        {previewData.filter(item => item.hasError).length > 3 && (
+                        {previewDate.filter(item => item.hasError).length > 3 && (
                           <div className="text-red-600 font-medium">
-                            ... e mais {previewData.filter(item => item.hasError).length - 3} erro(s)
+                            ... e mais {previewDate.filter(item => item.hasError).length - 3} erro(s)
                           </div>
                         )}
                       </div>
@@ -1581,7 +1581,7 @@ export default function AlunosPage() {
                   
                   <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
                     <strong>📝 Confirme os dados antes de importar.</strong> 
-                    {previewData.some(item => item.hasError) 
+                    {previewDate.some(item => item.hasError) 
                       ? ' Apenas alunos sem erro serão importados.'
                       : ' Esta ação adicionará todos os alunos à turma selecionada.'
                     }
@@ -1611,7 +1611,7 @@ export default function AlunosPage() {
                             <div key={idx} className="bg-white p-2 rounded border border-red-100">
                               <div className="font-medium text-red-800">❌ {duplicate.studentName}</div>
                               <div className="text-xs text-red-600 mt-1">
-                                <strong>Motivo:</strong> Matrícula <code className="bg-red-100 px-1 rounded">{duplicate.matricula}</code> já pertence ao aluno 
+                                <strong>Motivo:</strong> Registration <code className="bg-red-100 px-1 rounded">{duplicate.matricula}</code> já pertence ao aluno 
                                 &apos;<strong>{duplicate.existingStudentName}</strong>&apos; da turma &apos;<strong>{duplicate.existingClassName}</strong>&apos;
                               </div>
                             </div>
@@ -1642,21 +1642,21 @@ export default function AlunosPage() {
                   onClick={closeImportModal}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200 font-medium"
                 >
-                  {importResult ? 'Fechar' : 'Cancelar'}
+                  {importResult ? 'Close' : 'Cancel'}
                 </button>
                 {!importResult && (
                   <button
                     type="button"
                     onClick={handleImportStudents}
-                    disabled={!importClassId || previewData.length === 0 || isValidatingData}
+                    disabled={!importClassId || previewDate.length === 0 || isValidatingDate}
                     className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg transition-colors duration-200 font-medium"
                   >
-                    {isValidatingData ? (
+                    {isValidatingDate ? (
                       <>🔄 Validando...</>
                     ) : (
-                      <>📤 Importar {previewData.filter(item => !item.hasError).length} Aluno{previewData.filter(item => !item.hasError).length !== 1 ? 's' : ''}
-                        {previewData.some(item => item.hasError) && (
-                          <span className="text-purple-200 ml-1">({previewData.filter(item => item.hasError).length} com erro)</span>
+                      <>📤 Importar {previewDate.filter(item => !item.hasError).length} Student{previewDate.filter(item => !item.hasError).length !== 1 ? 's' : ''}
+                        {previewDate.some(item => item.hasError) && (
+                          <span className="text-purple-200 ml-1">({previewDate.filter(item => item.hasError).length} com erro)</span>
                         )}
                       </>
                     )}

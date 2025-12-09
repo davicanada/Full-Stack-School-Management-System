@@ -1,13 +1,13 @@
-// Tipos para o sistema de gestão de ocorrências escolares
+// Types for the school management system
 
 export interface User {
   id: string;
   name: string;
   email: string;
   is_active?: boolean;
-  // role e institution_id foram removidos do banco - agora vêm de user_institutions
+  // role and institution_id were removed from the database - now they come from user_institutions
   created_at?: string;
-  // Campos do sistema de lixeira
+  // Trash system fields
   deleted_at?: string | null;
   deleted_by?: string | null;
 }
@@ -16,15 +16,15 @@ export interface Usuario {
   id: string;
   email: string;
   name: string;
-  nome?: string; // Para compatibilidade
-  // Campos abaixo vêm de user_institutions, não da tabela users
+  nome?: string; // For compatibility
+  // Fields below come from user_institutions, not from users table
   role: 'master' | 'admin' | 'professor';
-  tipo?: 'admin' | 'professor' | 'coordenador'; // Para compatibilidade
+  tipo?: 'admin' | 'professor' | 'coordenador'; // For compatibility
   institution_id?: string;
   password_hash?: string;
   created_at: string;
   is_active?: boolean;
-  // Campos do sistema de lixeira
+  // Trash system fields
   deleted_at?: string | null;
   deleted_by?: string | null;
 }
@@ -39,7 +39,7 @@ export interface Teacher {
   userInstitutionId?: string;
   classCount?: number;
   occurrenceCount?: number;
-  // Campos do sistema de lixeira
+  // Trash system fields
   deleted_at?: string | null;
   deleted_by?: string | null;
 }
@@ -52,7 +52,7 @@ export interface Student {
   class_id?: string;
   is_active: boolean;
   created_at: string;
-  // Campos do sistema de lixeira
+  // Trash system fields
   deleted_at?: string | null;
   deleted_by?: string | null;
 }
@@ -73,7 +73,7 @@ export interface Ocorrencia {
 export interface Institution {
   id: string;
   nome: string;
-  name: string; // Alias para nome
+  name: string; // Alias for nome
   endereco?: string;
   cidade?: string;
   estado?: string;

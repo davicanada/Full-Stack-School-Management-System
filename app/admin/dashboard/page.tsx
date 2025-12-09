@@ -9,7 +9,7 @@ import * as XLSX from 'xlsx';
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 
-interface DashboardData {
+interface DashboardDate {
   totalOccurrences: number;
   studentsWithOccurrences: number;
   studentsWithoutOccurrences: number;
@@ -38,7 +38,7 @@ interface OccurrencesByType {
   severity: string;
 }
 
-interface MonthlyData {
+interface MonthlyDate {
   month: string;
   count: number;
   change: number; // Mudança absoluta para waterfall
@@ -57,11 +57,11 @@ interface StudentsWithoutOccurrences {
   classId: string;
 }
 
-interface DayOfWeekData {
+interface DayOfWeekDate {
   day: string;
   count: number;
   percentChange?: number; // Variação percentual em relação ao dia anterior
-  date?: string; // Data específica (para modo semana)
+  date?: string; // Date específica (para modo semana)
 }
 
 interface OccurrencesByShift {
@@ -87,8 +87,8 @@ export default function DashboardOcorrenciasPage() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
 
-  // Dashboard Data
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
+  // Dashboard Date
+  const [dashboardDate, setDashboardDate] = useState<DashboardDate>({
     totalOccurrences: 0,
     studentsWithOccurrences: 0,
     studentsWithoutOccurrences: 0,
@@ -100,10 +100,10 @@ export default function DashboardOcorrenciasPage() {
   const [occurrencesByClass, setOccurrencesByClass] = useState<OccurrencesByClass[]>([]);
   const [occurrencesByStudent, setOccurrencesByStudent] = useState<OccurrencesByStudent[]>([]);
   const [occurrencesByType, setOccurrencesByType] = useState<OccurrencesByType[]>([]);
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [monthlyDate, setMonthlyDate] = useState<MonthlyDate[]>([]);
   const [topTeachers, setTopTeachers] = useState<TopTeachers[]>([]);
   const [studentsWithoutOccurrences, setStudentsWithoutOccurrences] = useState<StudentsWithoutOccurrences[]>([]);
-  const [dayOfWeekData, setDayOfWeekData] = useState<DayOfWeekData[]>([]);
+  const [dayOfWeekDate, setDayOfWeekDate] = useState<DayOfWeekDate[]>([]);
   const [occurrencesByShift, setOccurrencesByShift] = useState<OccurrencesByShift[]>([]);
   const [occurrencesByEducationLevel, setOccurrencesByEducationLevel] = useState<OccurrencesByEducationLevel[]>([]);
 
@@ -126,10 +126,10 @@ export default function DashboardOcorrenciasPage() {
   // Menu de configurações
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [settings, setSettings] = useState({
-    showTeachersData: false,
+    showTeachersDate: false,
     compactMode: false,
     showChartValues: true,
-    includeSensitiveDataInExport: false
+    includeSensitiveDateInExport: false
   });
 
   // Menu de filtros flutuante
@@ -167,21 +167,21 @@ export default function DashboardOcorrenciasPage() {
           return;
         }
 
-        const userData = JSON.parse(storedUser);
+        const userDate = JSON.parse(storedUser);
 
-        if (!userData || userData.role !== 'admin') {
+        if (!userDate || userDate.role !== 'admin') {
           toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userData);
-        await loadInstitution(userData);
-        await loadAvailableYears(userData);
-        await loadDashboardData(userData);
+        setUser(userDate);
+        await loadInstitution(userDate);
+        await loadAvailableYears(userDate);
+        await loadDashboardDate(userDate);
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Erro ao verificar autenticação');
+        toast.error('Error verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -191,7 +191,7 @@ export default function DashboardOcorrenciasPage() {
     checkAuth();
   }, [router]);
 
-  // Atualizar range de datas quando o ano ou datas customizadas mudam
+  // Update range de datas quando o ano ou datas customizadas mudam
   useEffect(() => {
     // Se houver datas customizadas, usar elas; senão usar o ano completo
     if (customStartDate && customEndDate) {
@@ -228,7 +228,7 @@ export default function DashboardOcorrenciasPage() {
     if (user) {
       const loadWithFiltering = async () => {
         setIsFiltering(true);
-        await loadDashboardData(user);
+        await loadDashboardDate(user);
         setIsFiltering(false);
       };
 
@@ -241,7 +241,7 @@ export default function DashboardOcorrenciasPage() {
     }
   }, [selectedYear, dateRange, activeFilters, weekViewMode, selectedWeekStart]);
 
-  // Fechar menu de filtros ao clicar fora
+  // Close menu de filtros ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -258,35 +258,35 @@ export default function DashboardOcorrenciasPage() {
     }
   }, [showFiltersMenu]);
 
-  const loadInstitution = async (userData: Usuario) => {
+  const loadInstitution = async (userDate: Usuario) => {
     try {
       const { data, error } = await supabase
         .from('institutions')
         .select('*')
-        .eq('id', userData.institution_id)
+        .eq('id', userDate.institution_id)
         .single();
 
       if (!error && data) {
         setInstitution(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar instituição:', error);
+      console.error('Error carregar instituição:', error);
     }
   };
 
-  const loadAvailableYears = async (userData: Usuario) => {
+  const loadAvailableYears = async (userDate: Usuario) => {
     try {
       const { data } = await supabase
         .from('classes')
         .select('academic_year')
-        .eq('institution_id', userData.institution_id);
+        .eq('institution_id', userDate.institution_id);
 
       if (data) {
         const years = Array.from(new Set(data.map(c => c.academic_year))).sort((a, b) => b - a);
         setAvailableYears(years);
       }
     } catch (error) {
-      console.error('Erro ao carregar anos disponíveis:', error);
+      console.error('Error carregar anos disponíveis:', error);
     }
   };
 
@@ -356,11 +356,11 @@ export default function DashboardOcorrenciasPage() {
   const getFilterTypeName = (filterType: keyof typeof activeFilters) => {
     const names = {
       month: 'Mês',
-      class: 'Turma',
-      student: 'Aluno',
-      occurrenceType: 'Tipo',
-      teacher: 'Professor',
-      specificDate: 'Data',
+      class: 'Class',
+      student: 'Student',
+      occurrenceType: 'Type',
+      teacher: 'Teacher',
+      specificDate: 'Date',
       dayOfWeek: 'Dia da Semana',
     };
     return names[filterType] || filterType;
@@ -387,55 +387,55 @@ export default function DashboardOcorrenciasPage() {
   // PHASE 2: Event handlers para gráficos (memoizados)
   const onMonthlyChartClick = useCallback((params: any) => {
     const monthIndex = params.dataIndex;
-    const monthData = monthlyData[monthIndex];
+    const monthDate = monthlyDate[monthIndex];
     const monthValue = `${selectedYear}-${String(monthIndex + 1).padStart(2, '0')}`;
-    addFilter('month', monthValue, monthData.month);
-  }, [monthlyData, selectedYear]);
+    addFilter('month', monthValue, monthDate.month);
+  }, [monthlyDate, selectedYear]);
 
   const onClassChartClick = useCallback((params: any) => {
-    const classData = occurrencesByClass.find(c => c.className === params.name);
-    if (classData) {
-      addFilter('class', classData.classId, classData.className);
+    const classDate = occurrencesByClass.find(c => c.className === params.name);
+    if (classDate) {
+      addFilter('class', classDate.classId, classDate.className);
     }
   }, [occurrencesByClass]);
 
   const onStudentChartClick = useCallback((params: any) => {
     // O gráfico usa dados invertidos (.reverse()), então buscamos pelo nome na barra clicada
-    const studentData = occurrencesByStudent.find(s => s.studentName === params.name);
-    if (studentData) {
-      addFilter('student', studentData.studentId, studentData.studentName);
+    const studentDate = occurrencesByStudent.find(s => s.studentName === params.name);
+    if (studentDate) {
+      addFilter('student', studentDate.studentId, studentDate.studentName);
     }
   }, [occurrencesByStudent]);
 
   const onTypeChartClick = useCallback((params: any) => {
     // O gráfico usa dados invertidos (.reverse()), então buscamos pelo nome na barra clicada
-    const typeData = occurrencesByType.find(t => t.typeName === params.name);
-    if (typeData) {
-      addFilter('occurrenceType', typeData.typeId, typeData.typeName);
+    const typeDate = occurrencesByType.find(t => t.typeName === params.name);
+    if (typeDate) {
+      addFilter('occurrenceType', typeDate.typeId, typeDate.typeName);
     }
   }, [occurrencesByType]);
 
   const onTeacherChartClick = useCallback((params: any) => {
     // O gráfico usa dados invertidos (.reverse()), então buscamos pelo nome na barra clicada
-    const teacherData = topTeachers.find(t => t.teacherName === params.name);
-    if (teacherData) {
-      addFilter('teacher', teacherData.teacherId, teacherData.teacherName);
+    const teacherDate = topTeachers.find(t => t.teacherName === params.name);
+    if (teacherDate) {
+      addFilter('teacher', teacherDate.teacherId, teacherDate.teacherName);
     }
   }, [topTeachers]);
 
   const onShiftChartClick = useCallback((params: any) => {
     // params.data contém os dados do slice clicado
-    const shiftData = params.data;
-    if (shiftData && shiftData.shift) {
-      addFilter('shift', shiftData.shift, shiftData.name);
+    const shiftDate = params.data;
+    if (shiftDate && shiftDate.shift) {
+      addFilter('shift', shiftDate.shift, shiftDate.name);
     }
   }, []);
 
   const onEducationLevelChartClick = useCallback((params: any) => {
     // params.data contém os dados do slice clicado
-    const levelData = params.data;
-    if (levelData && levelData.level) {
-      addFilter('educationLevel', levelData.level, levelData.name);
+    const levelDate = params.data;
+    if (levelDate && levelDate.level) {
+      addFilter('educationLevel', levelDate.level, levelDate.name);
     }
   }, []);
 
@@ -446,9 +446,9 @@ export default function DashboardOcorrenciasPage() {
     if (dayName && dataIndex !== undefined) {
       if (weekViewMode === 'week' || weekViewMode === 'month-detail') {
         // Modo semana ou detalhamento: filtrar por data específica daquele dia
-        const clickedDayData = dayOfWeekData[dataIndex];
-        if (clickedDayData?.date) {
-          const formattedDate = new Date(clickedDayData.date).toLocaleDateString('pt-BR', {
+        const clickedDayDate = dayOfWeekDate[dataIndex];
+        if (clickedDayDate?.date) {
+          const formattedDate = new Date(clickedDayDate.date).toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
@@ -457,7 +457,7 @@ export default function DashboardOcorrenciasPage() {
           if (activeFilters.dayOfWeek) {
             removeFilter('dayOfWeek');
           }
-          addFilter('specificDate', clickedDayData.date, formattedDate);
+          addFilter('specificDate', clickedDayDate.date, formattedDate);
         }
       } else {
         // Modo média: filtrar por dia da semana genérico (todas as quintas, por exemplo)
@@ -478,7 +478,7 @@ export default function DashboardOcorrenciasPage() {
         }
       }
     }
-  }, [weekViewMode, dayOfWeekData, activeFilters]);
+  }, [weekViewMode, dayOfWeekDate, activeFilters]);
 
   // Funções de navegação de semana
   const goToPreviousWeek = () => {
@@ -569,7 +569,7 @@ export default function DashboardOcorrenciasPage() {
     }
 
     // NOTA: Filtro de data específica (specificDate) é aplicado apenas no cliente via filterByDayOfWeek
-    // para evitar problemas de timezone. Não aplicar no servidor.
+    // para evitar problemas de timezone. No aplicar no servidor.
 
     return filteredQuery;
   };
@@ -602,17 +602,17 @@ export default function DashboardOcorrenciasPage() {
     return data;
   };
 
-  const loadDashboardData = async (userData: Usuario) => {
-    if (!userData?.institution_id) return;
+  const loadDashboardDate = async (userDate: Usuario) => {
+    if (!userDate?.institution_id) return;
 
     try {
       const { start, end } = dateRange;
 
-      // Buscar turmas do ano selecionado
+      // Search turmas do ano selecionado
       let classesQuery = supabase
         .from('classes')
         .select('id, shift, education_level')
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .eq('academic_year', selectedYear);
 
       // Aplicar filtro por turno se ativo
@@ -625,13 +625,13 @@ export default function DashboardOcorrenciasPage() {
         classesQuery = classesQuery.eq('education_level', activeFilters.educationLevel.value);
       }
 
-      const { data: classesData } = await classesQuery;
+      const { data: classesDate } = await classesQuery;
 
-      const classIds = classesData?.map(c => c.id) || [];
+      const classIds = classesDate?.map(c => c.id) || [];
 
       if (classIds.length === 0) {
         // Resetar dados se não houver turmas
-        setDashboardData({
+        setDashboardDate({
           totalOccurrences: 0,
           studentsWithOccurrences: 0,
           studentsWithoutOccurrences: 0,
@@ -642,10 +642,10 @@ export default function DashboardOcorrenciasPage() {
         setOccurrencesByClass([]);
         setOccurrencesByStudent([]);
         setOccurrencesByType([]);
-        setMonthlyData([]);
+        setMonthlyDate([]);
         setTopTeachers([]);
         setStudentsWithoutOccurrences([]);
-        setDayOfWeekData([]);
+        setDayOfWeekDate([]);
         return;
       }
 
@@ -656,7 +656,7 @@ export default function DashboardOcorrenciasPage() {
       let occurrencesQuery = supabase
         .from('occurrences')
         .select(hasDayOfWeekFilter ? 'occurred_at' : '*', { count: 'exact', head: !hasDayOfWeekFilter })
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       // Aplicar filtros de data se não houver filtro de mês (filtro de mês sobrescreve)
@@ -671,7 +671,7 @@ export default function DashboardOcorrenciasPage() {
       let studentsQuery = supabase
         .from('students')
         .select('*', { count: 'exact', head: true })
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       // Aplicar filtro de turma se ativo
@@ -693,11 +693,11 @@ export default function DashboardOcorrenciasPage() {
         currentOccurrences = occurrencesResult.count || 0;
       }
 
-      // Alunos com ocorrências (com filtros)
+      // Students com ocorrências (com filtros)
       let studentsOccurrencesQuery = supabase
         .from('occurrences')
         .select('student_id, occurred_at')
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -708,10 +708,10 @@ export default function DashboardOcorrenciasPage() {
 
       studentsOccurrencesQuery = applyActiveFilters(studentsOccurrencesQuery);
 
-      const { data: studentsWithOccurrencesData } = await studentsOccurrencesQuery;
+      const { data: studentsWithOccurrencesDate } = await studentsOccurrencesQuery;
 
       // Aplicar filtro de dia da semana
-      const filteredStudentsOccurrences = filterByDayOfWeek(studentsWithOccurrencesData || []);
+      const filteredStudentsOccurrences = filterByDayOfWeek(studentsWithOccurrencesDate || []);
 
       const uniqueStudentsWithOccurrences = new Set(
         filteredStudentsOccurrences?.map(o => o.student_id) || []
@@ -719,7 +719,7 @@ export default function DashboardOcorrenciasPage() {
 
       const totalStudents = studentsResult.count || 0;
 
-      setDashboardData({
+      setDashboardDate({
         totalOccurrences: currentOccurrences,
         studentsWithOccurrences: uniqueStudentsWithOccurrences,
         studentsWithoutOccurrences: totalStudents - uniqueStudentsWithOccurrences,
@@ -730,24 +730,24 @@ export default function DashboardOcorrenciasPage() {
 
       // 2. Carregar dados dos gráficos
       await Promise.all([
-        loadOccurrencesByClass(userData, classIds),
-        loadOccurrencesByStudent(userData, classIds),
-        loadOccurrencesByType(userData, classIds),
-        loadMonthlyData(userData, classIds),
-        loadTopTeachers(userData, classIds),
-        loadStudentsWithoutOccurrences(userData, classIds),
-        loadDayOfWeekData(userData, classIds),
-        loadOccurrencesByShift(userData, classIds),
-        loadOccurrencesByEducationLevel(userData, classIds)
+        loadOccurrencesByClass(userDate, classIds),
+        loadOccurrencesByStudent(userDate, classIds),
+        loadOccurrencesByType(userDate, classIds),
+        loadMonthlyDate(userDate, classIds),
+        loadTopTeachers(userDate, classIds),
+        loadStudentsWithoutOccurrences(userDate, classIds),
+        loadDayOfWeekDate(userDate, classIds),
+        loadOccurrencesByShift(userDate, classIds),
+        loadOccurrencesByEducationLevel(userDate, classIds)
       ]);
 
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-      toast.error('Erro ao carregar dados do dashboard');
+      console.error('Error carregar dados do dashboard:', error);
+      toast.error('Error carregar dados do dashboard');
     }
   };
 
-  const loadOccurrencesByClass = async (userData: Usuario, classIds: string[]) => {
+  const loadOccurrencesByClass = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
@@ -758,7 +758,7 @@ export default function DashboardOcorrenciasPage() {
           occurred_at,
           classes!inner(name)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -772,11 +772,11 @@ export default function DashboardOcorrenciasPage() {
       const { data } = await query;
 
       // Aplicar filtro de dia da semana no lado do cliente
-      const filteredData = filterByDayOfWeek(data || []);
+      const filteredDate = filterByDayOfWeek(data || []);
 
       const classOccurrences: { [key: string]: { name: string; count: number; id: string } } = {};
 
-      filteredData?.forEach(occurrence => {
+      filteredDate?.forEach(occurrence => {
         const classId = occurrence.class_id;
         const className = (occurrence.classes as any)?.name || 'Sem turma';
 
@@ -786,23 +786,23 @@ export default function DashboardOcorrenciasPage() {
         classOccurrences[classId].count++;
       });
 
-      const classesData = Object.values(classOccurrences).map(cls => ({
+      const classesDate = Object.values(classOccurrences).map(cls => ({
         className: cls.name,
         classId: cls.id,
         count: cls.count
       }));
 
-      setOccurrencesByClass(classesData.sort((a, b) => b.count - a.count));
+      setOccurrencesByClass(classesDate.sort((a, b) => b.count - a.count));
     } catch (error) {
-      console.error('Erro ao carregar ocorrências por turma:', error);
+      console.error('Error carregar ocorrências por turma:', error);
     }
   };
 
-  const loadOccurrencesByStudent = async (userData: Usuario, classIds: string[]) => {
+  const loadOccurrencesByStudent = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
-      // Buscar ocorrências agrupadas por aluno (com filtros)
+      // Search ocorrências agrupadas por aluno (com filtros)
       let query = supabase
         .from('occurrences')
         .select(`
@@ -810,7 +810,7 @@ export default function DashboardOcorrenciasPage() {
           occurred_at,
           students!student_id(name)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -824,13 +824,13 @@ export default function DashboardOcorrenciasPage() {
       const { data } = await query;
 
       // Aplicar filtro de dia da semana no lado do cliente
-      const filteredData = filterByDayOfWeek(data || []);
+      const filteredDate = filterByDayOfWeek(data || []);
 
       const studentOccurrences: { [key: string]: { name: string; count: number; id: string } } = {};
 
-      filteredData?.forEach(occurrence => {
+      filteredDate?.forEach(occurrence => {
         const studentId = occurrence.student_id;
-        const studentName = (occurrence.students as any)?.name || `Aluno ${studentId}`;
+        const studentName = (occurrence.students as any)?.name || `Student ${studentId}`;
 
         if (!studentOccurrences[studentId]) {
           studentOccurrences[studentId] = { name: studentName, count: 0, id: studentId };
@@ -838,7 +838,7 @@ export default function DashboardOcorrenciasPage() {
         studentOccurrences[studentId].count++;
       });
 
-      // Buscar turma ATUAL de cada aluno (não a turma da ocorrência)
+      // Search turma ATUAL de cada aluno (não a turma da ocorrência)
       const studentIds = Object.keys(studentOccurrences);
       const { data: studentsWithClasses } = await supabase
         .from('students')
@@ -856,22 +856,22 @@ export default function DashboardOcorrenciasPage() {
       });
 
       // Lista completa de alunos (sem limite Top 10), ordenada por quantidade de ocorrências
-      const studentsData = Object.values(studentOccurrences)
+      const studentsDate = Object.values(studentOccurrences)
         .sort((a, b) => b.count - a.count) // Mais ocorrências primeiro
         .map(student => ({
           studentName: student.name,
           studentId: student.id,
           count: student.count,
-          className: studentCurrentClass[student.id] || 'Sem turma' // Turma ATUAL
+          className: studentCurrentClass[student.id] || 'Sem turma' // Class ATUAL
         }));
 
-      setOccurrencesByStudent(studentsData);
+      setOccurrencesByStudent(studentsDate);
     } catch (error) {
-      console.error('Erro ao carregar ocorrências por aluno:', error);
+      console.error('Error carregar ocorrências por aluno:', error);
     }
   };
 
-  const loadOccurrencesByType = async (userData: Usuario, classIds: string[]) => {
+  const loadOccurrencesByType = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
@@ -882,7 +882,7 @@ export default function DashboardOcorrenciasPage() {
           occurred_at,
           occurrence_types!inner(name, severity)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -896,11 +896,11 @@ export default function DashboardOcorrenciasPage() {
       const { data } = await query;
 
       // Aplicar filtro de dia da semana no lado do cliente
-      const filteredData = filterByDayOfWeek(data || []);
+      const filteredDate = filterByDayOfWeek(data || []);
 
       const typeOccurrences: { [key: string]: { name: string; count: number; id: string; severity: string } } = {};
 
-      filteredData?.forEach(occurrence => {
+      filteredDate?.forEach(occurrence => {
         const typeId = occurrence.occurrence_type_id;
         const typeName = (occurrence.occurrence_types as any)?.name || 'Sem tipo';
         const severity = (occurrence.occurrence_types as any)?.severity || 'leve';
@@ -911,20 +911,20 @@ export default function DashboardOcorrenciasPage() {
         typeOccurrences[typeId].count++;
       });
 
-      const typesData = Object.values(typeOccurrences).map(type => ({
+      const typesDate = Object.values(typeOccurrences).map(type => ({
         typeName: type.name,
         typeId: type.id,
         count: type.count,
         severity: type.severity
       }));
 
-      setOccurrencesByType(typesData.sort((a, b) => b.count - a.count));
+      setOccurrencesByType(typesDate.sort((a, b) => b.count - a.count));
     } catch (error) {
-      console.error('Erro ao carregar ocorrências por tipo:', error);
+      console.error('Error carregar ocorrências por tipo:', error);
     }
   };
 
-  const loadMonthlyData = async (userData: Usuario, classIds: string[]) => {
+  const loadMonthlyDate = async (userDate: Usuario, classIds: string[]) => {
     try {
       const now = new Date();
       const currentYear = now.getFullYear();
@@ -1006,7 +1006,7 @@ export default function DashboardOcorrenciasPage() {
           let query = supabase
             .from('occurrences')
             .select(hasDateFilters ? 'occurred_at' : '*', { count: 'exact', head: !hasDateFilters })
-            .eq('institution_id', userData.institution_id)
+            .eq('institution_id', userDate.institution_id)
             .in('class_id', classIds)
             .gte('occurred_at', start)
             .lte('occurred_at', end);
@@ -1028,10 +1028,10 @@ export default function DashboardOcorrenciasPage() {
           // Executar query
           if (hasDateFilters) {
             const { data } = await query;
-            const filteredData = filterByDayOfWeek(data || []);
+            const filteredDate = filterByDayOfWeek(data || []);
             return {
               month,
-              count: filteredData.length
+              count: filteredDate.length
             };
           } else {
             const { count } = await query;
@@ -1044,7 +1044,7 @@ export default function DashboardOcorrenciasPage() {
       );
 
       // Calcular mudanças para gráfico (mantido por compatibilidade)
-      const waterfallData: MonthlyData[] = monthlyResults.map((current, index) => {
+      const waterfallDate: MonthlyDate[] = monthlyResults.map((current, index) => {
         const change = index === 0 ? current.count : current.count - monthlyResults[index - 1].count;
         return {
           month: current.month,
@@ -1053,13 +1053,13 @@ export default function DashboardOcorrenciasPage() {
         };
       });
 
-      setMonthlyData(waterfallData);
+      setMonthlyDate(waterfallDate);
     } catch (error) {
-      console.error('Erro ao carregar dados mensais:', error);
+      console.error('Error carregar dados mensais:', error);
     }
   };
 
-  const loadTopTeachers = async (userData: Usuario, classIds: string[]) => {
+  const loadTopTeachers = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
@@ -1070,7 +1070,7 @@ export default function DashboardOcorrenciasPage() {
           occurred_at,
           users!teacher_id(name)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -1084,13 +1084,13 @@ export default function DashboardOcorrenciasPage() {
       const { data } = await query;
 
       // Aplicar filtro de dia da semana no lado do cliente
-      const filteredData = filterByDayOfWeek(data || []);
+      const filteredDate = filterByDayOfWeek(data || []);
 
       const teacherOccurrences: { [key: string]: { name: string; count: number; id: string } } = {};
 
-      filteredData?.forEach(occurrence => {
+      filteredDate?.forEach(occurrence => {
         const teacherId = occurrence.teacher_id;
-        const teacherName = (occurrence.users as any)?.name || `Professor ${teacherId}`;
+        const teacherName = (occurrence.users as any)?.name || `Teacher ${teacherId}`;
 
         if (!teacherOccurrences[teacherId]) {
           teacherOccurrences[teacherId] = { name: teacherName, count: 0, id: teacherId };
@@ -1099,7 +1099,7 @@ export default function DashboardOcorrenciasPage() {
       });
 
       // Lista completa de professores (sem limite Top 5), ordenada por quantidade de registros
-      const teachersData = Object.values(teacherOccurrences)
+      const teachersDate = Object.values(teacherOccurrences)
         .sort((a, b) => b.count - a.count) // Mais registros primeiro
         .map(teacher => ({
           teacherName: teacher.name,
@@ -1107,13 +1107,13 @@ export default function DashboardOcorrenciasPage() {
           count: teacher.count
         }));
 
-      setTopTeachers(teachersData);
+      setTopTeachers(teachersDate);
     } catch (error) {
-      console.error('Erro ao carregar top professores:', error);
+      console.error('Error carregar top professores:', error);
     }
   };
 
-  const loadStudentsWithoutOccurrences = async (userData: Usuario, classIds: string[]) => {
+  const loadStudentsWithoutOccurrences = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
@@ -1125,7 +1125,7 @@ export default function DashboardOcorrenciasPage() {
           class_id,
           classes!inner(name)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds)
         .not('class_id', 'is', null);
 
@@ -1139,7 +1139,7 @@ export default function DashboardOcorrenciasPage() {
       let occurrencesQuery = supabase
         .from('occurrences')
         .select('student_id, occurred_at')
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -1159,7 +1159,7 @@ export default function DashboardOcorrenciasPage() {
         filteredStudentsWithOccurrences?.map(o => o.student_id) || []
       );
 
-      const studentsWithoutOccurrencesData = allStudents
+      const studentsWithoutOccurrencesDate = allStudents
         ?.filter(student => !studentsWithOccurrencesIds.has(student.id))
         .map(student => ({
           studentName: student.name,
@@ -1168,13 +1168,13 @@ export default function DashboardOcorrenciasPage() {
           classId: student.class_id
         })) || [];
 
-      setStudentsWithoutOccurrences(studentsWithoutOccurrencesData);
+      setStudentsWithoutOccurrences(studentsWithoutOccurrencesDate);
     } catch (error) {
-      console.error('Erro ao carregar alunos sem ocorrências:', error);
+      console.error('Error carregar alunos sem ocorrências:', error);
     }
   };
 
-  const loadDayOfWeekData = async (userData: Usuario, classIds: string[]) => {
+  const loadDayOfWeekDate = async (userDate: Usuario, classIds: string[]) => {
     try {
       if (weekViewMode === 'week') {
         // Modo: Semana específica
@@ -1186,7 +1186,7 @@ export default function DashboardOcorrenciasPage() {
         let query = supabase
           .from('occurrences')
           .select('occurred_at')
-          .eq('institution_id', userData.institution_id)
+          .eq('institution_id', userDate.institution_id)
           .in('class_id', classIds)
           .gte('occurred_at', weekStart.toISOString())
           .lte('occurred_at', weekEnd.toISOString());
@@ -1215,8 +1215,8 @@ export default function DashboardOcorrenciasPage() {
           }
         });
 
-        // Criar array com dados e calcular variações
-        const dayData: DayOfWeekData[] = [];
+        // Create array com dados e calcular variações
+        const dayDate: DayOfWeekDate[] = [];
         let previousCount = 0;
 
         for (let i = 0; i < 5; i++) {
@@ -1232,7 +1232,7 @@ export default function DashboardOcorrenciasPage() {
             percentChange = 100;
           }
 
-          dayData.push({
+          dayDate.push({
             day: weekDays[i],
             count: count,
             percentChange: i > 0 ? percentChange : undefined,
@@ -1242,7 +1242,7 @@ export default function DashboardOcorrenciasPage() {
           previousCount = count;
         }
 
-        setDayOfWeekData(dayData);
+        setDayOfWeekDate(dayDate);
 
       } else if (weekViewMode === 'month-detail') {
         // Modo: Detalhamento do mês - mostra todas as datas com ocorrências
@@ -1251,7 +1251,7 @@ export default function DashboardOcorrenciasPage() {
         let query = supabase
           .from('occurrences')
           .select('occurred_at')
-          .eq('institution_id', userData.institution_id)
+          .eq('institution_id', userDate.institution_id)
           .in('class_id', classIds);
 
         // Aplicar range do mês filtrado ou período completo
@@ -1282,9 +1282,9 @@ export default function DashboardOcorrenciasPage() {
           dateCount[dateKey] = (dateCount[dateKey] || 0) + 1;
         });
 
-        // Criar array ordenado com todas as datas que têm ocorrências
+        // Create array ordenado com todas as datas que têm ocorrências
         const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        const dayData: DayOfWeekData[] = [];
+        const dayDate: DayOfWeekDate[] = [];
 
         // Ordenar datas
         const sortedDates = Object.keys(dateCount).sort();
@@ -1307,7 +1307,7 @@ export default function DashboardOcorrenciasPage() {
             percentChange = 100;
           }
 
-          dayData.push({
+          dayDate.push({
             day: label,
             count: count,
             percentChange: index > 0 ? percentChange : undefined,
@@ -1317,7 +1317,7 @@ export default function DashboardOcorrenciasPage() {
           previousCount = count;
         });
 
-        setDayOfWeekData(dayData);
+        setDayOfWeekDate(dayDate);
 
       } else {
         // Modo: Média por dia da semana
@@ -1326,7 +1326,7 @@ export default function DashboardOcorrenciasPage() {
         let query = supabase
           .from('occurrences')
           .select('occurred_at')
-          .eq('institution_id', userData.institution_id)
+          .eq('institution_id', userDate.institution_id)
           .in('class_id', classIds);
 
         if (!activeFilters.month) {
@@ -1376,7 +1376,7 @@ export default function DashboardOcorrenciasPage() {
 
         // Calcular médias
         const weekDays = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'];
-        const dayData: DayOfWeekData[] = [];
+        const dayDate: DayOfWeekDate[] = [];
         let previousAvg = 0;
 
         weekDays.forEach((day, index) => {
@@ -1391,7 +1391,7 @@ export default function DashboardOcorrenciasPage() {
             percentChange = 100;
           }
 
-          dayData.push({
+          dayDate.push({
             day,
             count: Math.round(average * 10) / 10, // Arredondar para 1 casa decimal
             percentChange: index > 0 ? percentChange : undefined
@@ -1400,10 +1400,10 @@ export default function DashboardOcorrenciasPage() {
           previousAvg = average;
         });
 
-        setDayOfWeekData(dayData);
+        setDayOfWeekDate(dayDate);
       }
     } catch (error) {
-      console.error('Erro ao carregar dados por dia da semana:', error);
+      console.error('Error carregar dados por dia da semana:', error);
     }
   };
 
@@ -1417,7 +1417,7 @@ export default function DashboardOcorrenciasPage() {
     return `${d.getUTCFullYear()}-W${weekNo}`;
   };
 
-  const loadOccurrencesByShift = async (userData: Usuario, classIds: string[]) => {
+  const loadOccurrencesByShift = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
@@ -1428,7 +1428,7 @@ export default function DashboardOcorrenciasPage() {
           occurred_at,
           classes!inner(shift)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -1442,12 +1442,12 @@ export default function DashboardOcorrenciasPage() {
       const { data } = await query;
 
       // Aplicar filtro de dia da semana no lado do cliente
-      const filteredData = filterByDayOfWeek(data || []);
+      const filteredDate = filterByDayOfWeek(data || []);
 
       const shiftCount: { [key: string]: number } = {};
 
-      filteredData?.forEach(occurrence => {
-        const shift = (occurrence.classes as any)?.shift || 'Não informado';
+      filteredDate?.forEach(occurrence => {
+        const shift = (occurrence.classes as any)?.shift || 'No informado';
         shiftCount[shift] = (shiftCount[shift] || 0) + 1;
       });
 
@@ -1456,22 +1456,22 @@ export default function DashboardOcorrenciasPage() {
         'vespertino': 'Vespertino',
         'noturno': 'Noturno',
         'integral': 'Integral',
-        'Não informado': 'Não informado'
+        'No informado': 'No informado'
       };
 
-      const shiftData = Object.entries(shiftCount).map(([shift, count]) => ({
+      const shiftDate = Object.entries(shiftCount).map(([shift, count]) => ({
         shift,
         shiftLabel: shiftLabels[shift] || shift,
         count
       }));
 
-      setOccurrencesByShift(shiftData.sort((a, b) => b.count - a.count));
+      setOccurrencesByShift(shiftDate.sort((a, b) => b.count - a.count));
     } catch (error) {
-      console.error('Erro ao carregar ocorrências por turno:', error);
+      console.error('Error carregar ocorrências por turno:', error);
     }
   };
 
-  const loadOccurrencesByEducationLevel = async (userData: Usuario, classIds: string[]) => {
+  const loadOccurrencesByEducationLevel = async (userDate: Usuario, classIds: string[]) => {
     try {
       const { start, end } = dateRange;
 
@@ -1482,7 +1482,7 @@ export default function DashboardOcorrenciasPage() {
           occurred_at,
           classes!inner(education_level)
         `)
-        .eq('institution_id', userData.institution_id)
+        .eq('institution_id', userDate.institution_id)
         .in('class_id', classIds);
 
       if (!activeFilters.month) {
@@ -1496,12 +1496,12 @@ export default function DashboardOcorrenciasPage() {
       const { data } = await query;
 
       // Aplicar filtro de dia da semana no lado do cliente
-      const filteredData = filterByDayOfWeek(data || []);
+      const filteredDate = filterByDayOfWeek(data || []);
 
       const levelCount: { [key: string]: number } = {};
 
-      filteredData?.forEach(occurrence => {
-        const level = (occurrence.classes as any)?.education_level || 'Não informado';
+      filteredDate?.forEach(occurrence => {
+        const level = (occurrence.classes as any)?.education_level || 'No informado';
         levelCount[level] = (levelCount[level] || 0) + 1;
       });
 
@@ -1510,18 +1510,18 @@ export default function DashboardOcorrenciasPage() {
         'pre_escola': 'Pré-escola (4-5 anos)',
         'fundamental': 'Ensino Fundamental',
         'ensino_medio': 'Ensino Médio',
-        'Não informado': 'Não informado'
+        'No informado': 'No informado'
       };
 
-      const levelData = Object.entries(levelCount).map(([level, count]) => ({
+      const levelDate = Object.entries(levelCount).map(([level, count]) => ({
         level,
         levelLabel: levelLabels[level] || level,
         count
       }));
 
-      setOccurrencesByEducationLevel(levelData.sort((a, b) => b.count - a.count));
+      setOccurrencesByEducationLevel(levelDate.sort((a, b) => b.count - a.count));
     } catch (error) {
-      console.error('Erro ao carregar ocorrências por nível educacional:', error);
+      console.error('Error carregar ocorrências por nível educacional:', error);
     }
   };
 
@@ -1529,43 +1529,43 @@ export default function DashboardOcorrenciasPage() {
     try {
       const wb = XLSX.utils.book_new();
 
-      const kpiData = [
+      const kpiDate = [
         ['Métrica', 'Valor'],
         ['Ano Letivo', selectedYear],
-        ['Total de Ocorrências', dashboardData.totalOccurrences],
-        ['Alunos com Ocorrências', dashboardData.studentsWithOccurrences],
-        ['Alunos sem Ocorrências', dashboardData.studentsWithoutOccurrences],
-        ['Total de Alunos', dashboardData.totalStudents],
-        ['Taxa de Alunos com Ocorrências', `${((dashboardData.studentsWithOccurrences / dashboardData.totalStudents) * 100).toFixed(1)}%`],
+        ['Total Occurrences', dashboardDate.totalOccurrences],
+        ['Students com Occurrences', dashboardDate.studentsWithOccurrences],
+        ['Students sem Occurrences', dashboardDate.studentsWithoutOccurrences],
+        ['Total Students', dashboardDate.totalStudents],
+        ['Taxa de Students com Occurrences', `${((dashboardDate.studentsWithOccurrences / dashboardDate.totalStudents) * 100).toFixed(1)}%`],
         ['Período', `${dateRange.start} a ${dateRange.end}`]
       ];
 
-      const kpiWs = XLSX.utils.aoa_to_sheet(kpiData);
+      const kpiWs = XLSX.utils.aoa_to_sheet(kpiDate);
       XLSX.utils.book_append_sheet(wb, kpiWs, 'KPIs');
 
-      const classesData = [
-        ['Turma', 'Quantidade de Ocorrências'],
+      const classesDate = [
+        ['Class', 'Quantidade de Occurrences'],
         ...occurrencesByClass.map(item => [item.className, item.count])
       ];
 
-      const classesWs = XLSX.utils.aoa_to_sheet(classesData);
-      XLSX.utils.book_append_sheet(wb, classesWs, 'Ocorrências por Turma');
+      const classesWs = XLSX.utils.aoa_to_sheet(classesDate);
+      XLSX.utils.book_append_sheet(wb, classesWs, 'Occurrences por Class');
 
-      const studentsData = [
-        ['Aluno', 'Turma', 'Quantidade de Ocorrências'],
+      const studentsDate = [
+        ['Student', 'Class', 'Quantidade de Occurrences'],
         ...occurrencesByStudent.map(item => [item.studentName, item.className, item.count])
       ];
 
-      const studentsWs = XLSX.utils.aoa_to_sheet(studentsData);
-      XLSX.utils.book_append_sheet(wb, studentsWs, 'Top Alunos');
+      const studentsWs = XLSX.utils.aoa_to_sheet(studentsDate);
+      XLSX.utils.book_append_sheet(wb, studentsWs, 'Top Students');
 
-      const typesData = [
-        ['Tipo de Ocorrência', 'Gravidade', 'Quantidade'],
+      const typesDate = [
+        ['Type de Occurrence', 'Gravidade', 'Quantidade'],
         ...occurrencesByType.map(item => [item.typeName, item.severity, item.count])
       ];
 
-      const typesWs = XLSX.utils.aoa_to_sheet(typesData);
-      XLSX.utils.book_append_sheet(wb, typesWs, 'Tipos de Ocorrências');
+      const typesWs = XLSX.utils.aoa_to_sheet(typesDate);
+      XLSX.utils.book_append_sheet(wb, typesWs, 'Types de Occurrences');
 
       const now = new Date();
       const institutionName = (institution?.nome || institution?.name || 'Instituicao').replace(/\s/g, '_');
@@ -1575,8 +1575,8 @@ export default function DashboardOcorrenciasPage() {
 
       toast.success('Dados exportados com sucesso!');
     } catch (error) {
-      console.error('Erro ao exportar para Excel:', error);
-      toast.error('Erro ao exportar dados para Excel');
+      console.error('Error exportar para Excel:', error);
+      toast.error('Error exportar dados para Excel');
     }
   };
 
@@ -1585,12 +1585,12 @@ export default function DashboardOcorrenciasPage() {
   // 1. Column Chart - Evolução Mensal com Variações Percentuais - CLICÁVEL
   const monthlyColumnOption: EChartsOption = useMemo(() => {
     // Calcular variações percentuais mês a mês
-    const dataWithVariations = monthlyData.map((d, index) => {
+    const dataWithVariations = monthlyDate.map((d, index) => {
       let variation = null;
       let variationText = '';
 
       if (index > 0) {
-        const previousCount = monthlyData[index - 1].count;
+        const previousCount = monthlyDate[index - 1].count;
         if (previousCount > 0) {
           const percentChange = ((d.count - previousCount) / previousCount) * 100;
           variation = percentChange;
@@ -1601,7 +1601,7 @@ export default function DashboardOcorrenciasPage() {
         } else if (d.count > 0) {
           // Caso especial: de 0 para algo
           variation = 100;
-          variationText = '↑ Novo';
+          variationText = '↑ New';
         }
       }
 
@@ -1623,7 +1623,7 @@ export default function DashboardOcorrenciasPage() {
       animationEasingUpdate: 'cubicInOut',
       animationDelayUpdate: (idx: number) => idx * 30,
       title: {
-        text: 'Evolução Mensal de Ocorrências',
+        text: 'Evolução Mensal de Occurrences',
         subtext: 'Variação % mês a mês • Clique para filtrar',
         left: 'center'
       },
@@ -1632,10 +1632,10 @@ export default function DashboardOcorrenciasPage() {
         axisPointer: { type: 'shadow' },
         formatter: (params: any) => {
           const data = params[0];
-          const monthData = monthlyData[data.dataIndex];
+          const monthDate = monthlyDate[data.dataIndex];
           const dataPoint = dataWithVariations[data.dataIndex];
 
-          let tooltip = `<strong>${monthData.month}</strong><br/>Total: ${monthData.count} ocorrências`;
+          let tooltip = `<strong>${monthDate.month}</strong><br/>Total: ${monthDate.count} ocorrências`;
 
           if (dataPoint.variationText) {
             tooltip += `<br/>Variação: <span style="color: ${dataPoint.variation && dataPoint.variation > 0 ? '#ef4444' : '#10b981'}">${dataPoint.variationText}</span>`;
@@ -1653,7 +1653,7 @@ export default function DashboardOcorrenciasPage() {
       },
       xAxis: {
         type: 'category',
-        data: monthlyData.map(d => d.month),
+        data: monthlyDate.map(d => d.month),
         axisLabel: {
           rotate: 45,
           fontSize: 11
@@ -1661,12 +1661,12 @@ export default function DashboardOcorrenciasPage() {
       },
       yAxis: {
         type: 'value',
-        name: 'Ocorrências',
+        name: 'Occurrences',
         minInterval: 1
       },
       series: [
         {
-          name: 'Ocorrências',
+          name: 'Occurrences',
           type: 'bar',
           label: {
             show: true,
@@ -1714,9 +1714,9 @@ export default function DashboardOcorrenciasPage() {
         }
       ]
     };
-  }, [monthlyData]);
+  }, [monthlyDate]);
 
-  // 2. Vertical Column Chart - Ocorrências por Turma (ordem alfabética, cores verde/vermelho)
+  // 2. Vertical Column Chart - Occurrences por Class (ordem alfabética, cores verde/vermelho)
   const classesByOccurrenceOption: EChartsOption = useMemo(() => {
     // Ordenar turmas alfabeticamente
     const sortedClasses = [...occurrencesByClass].sort((a, b) =>
@@ -1739,7 +1739,7 @@ export default function DashboardOcorrenciasPage() {
       animationEasingUpdate: 'cubicInOut',
       animationDelayUpdate: (idx: number) => idx * 25,
       title: {
-        text: 'Ocorrências por Turma',
+        text: 'Occurrences por Class',
         subtext: 'Ordenado alfabeticamente • Clique para filtrar',
         left: 'center'
       },
@@ -1749,7 +1749,7 @@ export default function DashboardOcorrenciasPage() {
         formatter: (params: any) => {
           const data = params[0];
           return `<strong>${data.name}</strong><br/>
-                  Ocorrências: ${data.value}`;
+                  Occurrences: ${data.value}`;
         }
       },
       grid: {
@@ -1768,12 +1768,12 @@ export default function DashboardOcorrenciasPage() {
       },
       yAxis: {
         type: 'value',
-        name: 'Ocorrências',
+        name: 'Occurrences',
         minInterval: 1
       },
       series: [
         {
-          name: 'Ocorrências',
+          name: 'Occurrences',
           type: 'bar',
           data: sortedClasses.map(d => d.count),
           itemStyle: {
@@ -1814,7 +1814,7 @@ export default function DashboardOcorrenciasPage() {
     };
   }, [occurrencesByClass]);
 
-  // 3. Horizontal Bar - Tipos de Ocorrências - CLICÁVEL
+  // 3. Horizontal Bar - Types de Occurrences - CLICÁVEL
   const typesByOccurrenceOption: EChartsOption = useMemo(() => ({
     // Animações suaves - INICIAL e UPDATE
     animation: true,
@@ -1826,7 +1826,7 @@ export default function DashboardOcorrenciasPage() {
     animationEasingUpdate: 'cubicInOut',
     animationDelayUpdate: (idx: number) => idx * 35,
     title: {
-      text: 'Tipos de Ocorrências',
+      text: 'Types de Occurrences',
       subtext: 'Clique para filtrar',
       left: 'center'
     },
@@ -1835,10 +1835,10 @@ export default function DashboardOcorrenciasPage() {
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const data = params[0];
-        const typeData = occurrencesByType[occurrencesByType.length - 1 - data.dataIndex];
-        return `<strong>${typeData.typeName}</strong><br/>
-                Gravidade: ${typeData.severity}<br/>
-                Ocorrências: ${typeData.count}`;
+        const typeDate = occurrencesByType[occurrencesByType.length - 1 - data.dataIndex];
+        return `<strong>${typeDate.typeName}</strong><br/>
+                Gravidade: ${typeDate.severity}<br/>
+                Occurrences: ${typeDate.count}`;
       }
     },
     grid: {
@@ -1849,7 +1849,7 @@ export default function DashboardOcorrenciasPage() {
     },
     xAxis: {
       type: 'value',
-      name: 'Ocorrências'
+      name: 'Occurrences'
     },
     yAxis: {
       type: 'category',
@@ -1860,7 +1860,7 @@ export default function DashboardOcorrenciasPage() {
     },
     series: [
       {
-        name: 'Ocorrências',
+        name: 'Occurrences',
         type: 'bar',
         data: occurrencesByType.map((d) => ({
           value: d.count,
@@ -1887,14 +1887,14 @@ export default function DashboardOcorrenciasPage() {
   // 4. Gráfico de Barras - Dias da Semana (com cores dinâmicas)
   const dayOfWeekOption: EChartsOption = useMemo(() => {
     // Encontrar min e max para normalizar cores
-    const counts = dayOfWeekData.map(d => d.count);
+    const counts = dayOfWeekDate.map(d => d.count);
     const maxCount = Math.max(...counts, 1);
     const minCount = Math.min(...counts, 0);
 
-    // Criar array de valores ordenados para ranking
+    // Create array de valores ordenados para ranking
     const sortedCounts = [...counts].sort((a, b) => a - b);
 
-    // Função para calcular cor baseada no valor (vermelho = alto, verde = baixo)
+    // Function to calcular cor baseada no valor (vermelho = alto, verde = baixo)
     const getColorForValue = (value: number): string => {
       if (maxCount === minCount) return '#fbbf24'; // Amarelo se todos iguais
 
@@ -1923,15 +1923,15 @@ export default function DashboardOcorrenciasPage() {
     let subtitleText = '';
 
     if (weekViewMode === 'week') {
-      titleText = `Ocorrências da Semana (${new Date(selectedWeekStart).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - ${new Date(new Date(selectedWeekStart).setDate(selectedWeekStart.getDate() + 4)).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`;
+      titleText = `Occurrences da Semana (${new Date(selectedWeekStart).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} - ${new Date(new Date(selectedWeekStart).setDate(selectedWeekStart.getDate() + 4)).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })})`;
       subtitleText = 'Clique para filtrar por data específica';
     } else if (weekViewMode === 'month-detail') {
       const monthLabel = activeFilters.month?.label || 'Período';
       const studentLabel = activeFilters.student ? ` - ${activeFilters.student.label}` : '';
-      titleText = `Ocorrências por Data - ${monthLabel}${studentLabel}`;
-      subtitleText = dayOfWeekData.length > 0 ? `${dayOfWeekData.length} dia(s) com ocorrências • Clique para filtrar` : 'Nenhuma ocorrência no período';
+      titleText = `Occurrences por Date - ${monthLabel}${studentLabel}`;
+      subtitleText = dayOfWeekDate.length > 0 ? `${dayOfWeekDate.length} dia(s) com ocorrências • Clique para filtrar` : 'Nenhuma ocorrência no período';
     } else {
-      titleText = 'Média de Ocorrências por Dia da Semana';
+      titleText = 'Média de Occurrences por Dia da Semana';
       subtitleText = 'Clique para filtrar por dia da semana';
     }
 
@@ -1958,12 +1958,12 @@ export default function DashboardOcorrenciasPage() {
         },
         formatter: (params: any) => {
           const dataIndex = params[0].dataIndex;
-          const dayData = dayOfWeekData[dataIndex];
-          const count = weekViewMode === 'average' ? dayData.count.toFixed(1) : dayData.count;
-          const percentChange = dayData.percentChange;
+          const dayDate = dayOfWeekDate[dataIndex];
+          const count = weekViewMode === 'average' ? dayDate.count.toFixed(1) : dayDate.count;
+          const percentChange = dayDate.percentChange;
 
-          let tooltip = `<strong>${dayData.day}</strong><br/>`;
-          tooltip += `Ocorrências: ${count}<br/>`;
+          let tooltip = `<strong>${dayDate.day}</strong><br/>`;
+          tooltip += `Occurrences: ${count}<br/>`;
 
           if (percentChange !== undefined && percentChange !== null) {
             const sign = percentChange >= 0 ? '+' : '';
@@ -1971,8 +1971,8 @@ export default function DashboardOcorrenciasPage() {
             tooltip += `<span style="color: ${color}">Variação: ${sign}${percentChange.toFixed(1)}%</span><br/>`;
           }
 
-          if (dayData.date && weekViewMode !== 'month-detail') {
-            tooltip += `Data: ${new Date(dayData.date).toLocaleDateString('pt-BR')}`;
+          if (dayDate.date && weekViewMode !== 'month-detail') {
+            tooltip += `Date: ${new Date(dayDate.date).toLocaleDateString('pt-BR')}`;
           }
 
           return tooltip;
@@ -1987,12 +1987,12 @@ export default function DashboardOcorrenciasPage() {
       },
       xAxis: {
         type: 'category',
-        data: dayOfWeekData.map(d => d.day),
+        data: dayOfWeekDate.map(d => d.day),
         axisLabel: {
           fontSize: weekViewMode === 'month-detail' ? 10 : 12,
           fontWeight: 'bold',
           color: '#374151',
-          rotate: weekViewMode === 'month-detail' && dayOfWeekData.length > 10 ? 45 : 0
+          rotate: weekViewMode === 'month-detail' && dayOfWeekDate.length > 10 ? 45 : 0
         },
         axisLine: {
           lineStyle: {
@@ -2002,7 +2002,7 @@ export default function DashboardOcorrenciasPage() {
       },
       yAxis: {
         type: 'value',
-        name: weekViewMode === 'average' ? 'Média de Ocorrências' : 'Ocorrências',
+        name: weekViewMode === 'average' ? 'Média de Occurrences' : 'Occurrences',
         nameTextStyle: {
           fontSize: 12,
           color: '#6b7280'
@@ -2017,13 +2017,13 @@ export default function DashboardOcorrenciasPage() {
           }
         }
       },
-      ...(weekViewMode === 'month-detail' && dayOfWeekData.length > 15 ? {
+      ...(weekViewMode === 'month-detail' && dayOfWeekDate.length > 15 ? {
         dataZoom: [
           {
             type: 'slider',
             xAxisIndex: 0,
             start: 0,
-            end: Math.min(100, (15 / dayOfWeekData.length) * 100),
+            end: Math.min(100, (15 / dayOfWeekDate.length) * 100),
             height: 20,
             bottom: 10,
             borderColor: '#ddd',
@@ -2036,7 +2036,7 @@ export default function DashboardOcorrenciasPage() {
             type: 'inside',
             xAxisIndex: 0,
             start: 0,
-            end: Math.min(100, (15 / dayOfWeekData.length) * 100),
+            end: Math.min(100, (15 / dayOfWeekDate.length) * 100),
             zoomOnMouseWheel: true,
             moveOnMouseMove: true
           }
@@ -2044,9 +2044,9 @@ export default function DashboardOcorrenciasPage() {
       } : {}),
       series: [
         {
-          name: 'Ocorrências',
+          name: 'Occurrences',
           type: 'bar',
-          data: dayOfWeekData.map((d) => {
+          data: dayOfWeekDate.map((d) => {
             const baseColor = getColorForValue(d.count);
             const percentChange = d.percentChange;
 
@@ -2071,9 +2071,9 @@ export default function DashboardOcorrenciasPage() {
                 position: 'top',
                 formatter: (params: any) => {
                   const dataIndex = params.dataIndex;
-                  const dayData = dayOfWeekData[dataIndex];
-                  const count = weekViewMode === 'average' ? dayData.count.toFixed(1) : dayData.count;
-                  const percentChange = dayData.percentChange;
+                  const dayDate = dayOfWeekDate[dataIndex];
+                  const count = weekViewMode === 'average' ? dayDate.count.toFixed(1) : dayDate.count;
+                  const percentChange = dayDate.percentChange;
 
                   if (percentChange !== undefined && percentChange !== null) {
                     const sign = percentChange >= 0 ? '+' : '';
@@ -2101,9 +2101,9 @@ export default function DashboardOcorrenciasPage() {
         }
       ]
     };
-  }, [dayOfWeekData, weekViewMode, selectedWeekStart]);
+  }, [dayOfWeekDate, weekViewMode, selectedWeekStart]);
 
-  // 5. Horizontal Bar - Alunos com Ocorrências (Lista Completa Scrollável) - CLICÁVEL
+  // 5. Horizontal Bar - Students com Occurrences (Lista Completa Scrollável) - CLICÁVEL
   const topStudentsOption: EChartsOption = useMemo(() => ({
     // Animação fluida - INICIAL e UPDATE
     animation: true,
@@ -2115,7 +2115,7 @@ export default function DashboardOcorrenciasPage() {
     animationEasingUpdate: 'cubicInOut',
     animationDelayUpdate: (idx: number) => idx * 15,
     title: {
-      text: `Alunos com Ocorrências (${occurrencesByStudent.length})`,
+      text: `Students com Occurrences (${occurrencesByStudent.length})`,
       subtext: 'Ordenado por quantidade - Role para ver todos • Clique para filtrar',
       left: 'center'
     },
@@ -2124,10 +2124,10 @@ export default function DashboardOcorrenciasPage() {
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const data = params[0];
-        const studentData = occurrencesByStudent[occurrencesByStudent.length - 1 - data.dataIndex];
-        return `<strong>${studentData.studentName}</strong><br/>
-                Turma: ${studentData.className}<br/>
-                Ocorrências: ${studentData.count}`;
+        const studentDate = occurrencesByStudent[occurrencesByStudent.length - 1 - data.dataIndex];
+        return `<strong>${studentDate.studentName}</strong><br/>
+                Class: ${studentDate.className}<br/>
+                Occurrences: ${studentDate.count}`;
       }
     },
     grid: {
@@ -2139,7 +2139,7 @@ export default function DashboardOcorrenciasPage() {
     },
     xAxis: {
       type: 'value',
-      name: 'Ocorrências'
+      name: 'Occurrences'
     },
     yAxis: {
       type: 'category',
@@ -2171,7 +2171,7 @@ export default function DashboardOcorrenciasPage() {
     ],
     series: [
       {
-        name: 'Ocorrências',
+        name: 'Occurrences',
         type: 'bar',
         data: occurrencesByStudent.map(d => d.count).reverse(),
         itemStyle: {
@@ -2194,7 +2194,7 @@ export default function DashboardOcorrenciasPage() {
     ]
   }), [occurrencesByStudent]);
 
-  // 6. Horizontal Bar - Professores (Lista Completa Scrollável) - CLICÁVEL
+  // 6. Horizontal Bar - Teacheres (Lista Completa Scrollável) - CLICÁVEL
   const topTeachersOption: EChartsOption = useMemo(() => ({
     // Animação fluida - INICIAL e UPDATE
     animation: true,
@@ -2206,7 +2206,7 @@ export default function DashboardOcorrenciasPage() {
     animationEasingUpdate: 'cubicInOut',
     animationDelayUpdate: (idx: number) => idx * 15,
     title: {
-      text: `Registros por Professor (${topTeachers.length})`,
+      text: `Registros por Teacher (${topTeachers.length})`,
       subtext: 'Ordenado por quantidade - Role para ver todos • Clique para filtrar',
       left: 'center'
     },
@@ -2294,7 +2294,7 @@ export default function DashboardOcorrenciasPage() {
       animationDurationUpdate: 1000,
       animationEasingUpdate: 'cubicInOut',
       title: {
-        text: 'Ocorrências por Turno',
+        text: 'Occurrences por Turno',
         left: 'center',
         top: 10
       },
@@ -2312,7 +2312,7 @@ export default function DashboardOcorrenciasPage() {
       },
       series: [
         {
-          name: 'Ocorrências',
+          name: 'Occurrences',
           type: 'pie',
           radius: ['45%', '70%'],
           center: ['60%', '50%'],
@@ -2371,7 +2371,7 @@ export default function DashboardOcorrenciasPage() {
       animationDurationUpdate: 1000,
       animationEasingUpdate: 'cubicInOut',
       title: {
-        text: 'Ocorrências por Nível Educacional',
+        text: 'Occurrences por Nível Educacional',
         left: 'center',
         top: 10
       },
@@ -2389,7 +2389,7 @@ export default function DashboardOcorrenciasPage() {
       },
       series: [
         {
-          name: 'Ocorrências',
+          name: 'Occurrences',
           type: 'pie',
           radius: ['45%', '70%'],
           center: ['60%', '50%'],
@@ -2434,7 +2434,7 @@ export default function DashboardOcorrenciasPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-blue-600 font-medium">Carregando dashboard...</p>
+          <p className="text-blue-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -2450,7 +2450,7 @@ export default function DashboardOcorrenciasPage() {
               <button
                 onClick={() => router.push('/admin')}
                 className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Voltar"
+                title="Back"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -2458,7 +2458,7 @@ export default function DashboardOcorrenciasPage() {
               </button>
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-blue-600 whitespace-nowrap">
-                  Dashboard de Ocorrências
+                  Dashboard de Occurrences
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 truncate max-w-[200px] sm:max-w-xs" title={institution?.nome || institution?.name}>
                   {institution?.nome || institution?.name}
@@ -2490,7 +2490,7 @@ export default function DashboardOcorrenciasPage() {
               {/* Divisor */}
               <div className="hidden lg:block w-px h-8 bg-gray-300"></div>
 
-              {/* Filtro de Intervalo de Datas Personalizado */}
+              {/* Filtro de Intervalo de Dates Personalizado */}
               <div className="flex items-center gap-1.5 flex-wrap">
                 <label className="text-xs sm:text-sm font-medium text-gray-700 flex items-center gap-1 whitespace-nowrap">
                   <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2502,7 +2502,7 @@ export default function DashboardOcorrenciasPage() {
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  placeholder="Data início"
+                  placeholder="Date início"
                   className="px-2 py-1 sm:py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs w-28 sm:w-32"
                   max={customEndDate || undefined}
                 />
@@ -2512,7 +2512,7 @@ export default function DashboardOcorrenciasPage() {
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  placeholder="Data fim"
+                  placeholder="Date fim"
                   className="px-2 py-1 sm:py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs w-28 sm:w-32"
                   min={customStartDate || undefined}
                 />
@@ -2543,11 +2543,11 @@ export default function DashboardOcorrenciasPage() {
                 <span className="sm:hidden">Excel</span>
               </button>
 
-              {/* Botão de Configurações */}
+              {/* Botão de Settings */}
               <button
                 onClick={() => setShowSettingsPanel(!showSettingsPanel)}
                 className="p-1.5 sm:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors relative"
-                title="Configurações do Dashboard"
+                title="Settings do Dashboard"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -2564,7 +2564,7 @@ export default function DashboardOcorrenciasPage() {
         </div>
       </header>
 
-      {/* Painel Lateral de Configurações */}
+      {/* Painel Lateral de Settings */}
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 z-40 ${
           showSettingsPanel ? 'opacity-100' : 'opacity-0 pointer-events-none'
@@ -2587,7 +2587,7 @@ export default function DashboardOcorrenciasPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h2 className="text-xl font-bold text-gray-900">Configurações</h2>
+              <h2 className="text-xl font-bold text-gray-900">Settings</h2>
             </div>
             <button
               onClick={() => setShowSettingsPanel(false)}
@@ -2613,7 +2613,7 @@ export default function DashboardOcorrenciasPage() {
               </div>
 
               <div className="space-y-3">
-                {/* Toggle: Mostrar Dados dos Professores */}
+                {/* Toggle: Mostrar Dados dos Teacheres */}
                 <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 rounded">
@@ -2622,15 +2622,15 @@ export default function DashboardOcorrenciasPage() {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Dados dos Professores</p>
+                      <p className="text-sm font-medium text-gray-900">Dados dos Teacheres</p>
                       <p className="text-xs text-gray-500">Mostrar gráfico de registros por professor</p>
                     </div>
                   </div>
                   <input
                     type="checkbox"
-                    checked={settings.showTeachersData}
+                    checked={settings.showTeachersDate}
                     onChange={(e) => {
-                      setSettings({ ...settings, showTeachersData: e.target.checked });
+                      setSettings({ ...settings, showTeachersDate: e.target.checked });
                       setShowTeachersChart(e.target.checked);
                     }}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
@@ -2706,7 +2706,7 @@ export default function DashboardOcorrenciasPage() {
                   <input
                     type="checkbox"
                     disabled
-                    checked={settings.includeSensitiveDataInExport}
+                    checked={settings.includeSensitiveDateInExport}
                     className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                   />
                 </label>
@@ -2744,7 +2744,7 @@ export default function DashboardOcorrenciasPage() {
               onClick={() => setShowSettingsPanel(false)}
               className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
             >
-              Aplicar Configurações
+              Aplicar Settings
             </button>
           </div>
         </div>
@@ -2777,9 +2777,9 @@ export default function DashboardOcorrenciasPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Total de Ocorrências</p>
-                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardData.totalOccurrences}>
-                    {dashboardData.totalOccurrences}
+                  <p className="text-sm font-medium text-gray-500">Total Occurrences</p>
+                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardDate.totalOccurrences}>
+                    {dashboardDate.totalOccurrences}
                   </p>
                 </div>
               </div>
@@ -2793,9 +2793,9 @@ export default function DashboardOcorrenciasPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Alunos com Ocorrências</p>
-                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardData.studentsWithOccurrences}>
-                    {dashboardData.studentsWithOccurrences}
+                  <p className="text-sm font-medium text-gray-500">Students com Occurrences</p>
+                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardDate.studentsWithOccurrences}>
+                    {dashboardDate.studentsWithOccurrences}
                   </p>
                 </div>
               </div>
@@ -2809,9 +2809,9 @@ export default function DashboardOcorrenciasPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Alunos sem Ocorrências</p>
-                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardData.studentsWithoutOccurrences}>
-                    {dashboardData.studentsWithoutOccurrences}
+                  <p className="text-sm font-medium text-gray-500">Students sem Occurrences</p>
+                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardDate.studentsWithoutOccurrences}>
+                    {dashboardDate.studentsWithoutOccurrences}
                   </p>
                 </div>
               </div>
@@ -2825,9 +2825,9 @@ export default function DashboardOcorrenciasPage() {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">Total de Alunos</p>
-                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardData.totalStudents}>
-                    {dashboardData.totalStudents}
+                  <p className="text-sm font-medium text-gray-500">Total Students</p>
+                  <p className="text-2xl font-bold text-gray-900 transition-all duration-500" key={dashboardDate.totalStudents}>
+                    {dashboardDate.totalStudents}
                   </p>
                 </div>
               </div>
@@ -2993,7 +2993,7 @@ export default function DashboardOcorrenciasPage() {
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     onChange={(e) => handleDateSelect(e.target.value)}
                     max={new Date().toISOString().split('T')[0]}
-                    title="Selecione uma data para ir para a semana correspondente"
+                    title="Select uma data para ir para a semana correspondente"
                   />
                 </div>
               </div>
@@ -3045,7 +3045,7 @@ export default function DashboardOcorrenciasPage() {
               />
             </div>
 
-            {/* Gráfico de Professores - Controlado via Configurações */}
+            {/* Gráfico de Teacheres - Controlado via Settings */}
             {showTeachersChart && (
               <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
                 <ReactECharts
@@ -3066,14 +3066,14 @@ export default function DashboardOcorrenciasPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Destaques Positivos</h2>
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Alunos sem Ocorrências ({studentsWithoutOccurrences.length})
+              Students sem Occurrences ({studentsWithoutOccurrences.length})
             </h3>
             <div className="max-h-96 overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 sticky top-0">
                   <tr>
-                    <th className="text-left p-3 font-medium text-gray-600">Nome</th>
-                    <th className="text-left p-3 font-medium text-gray-600">Turma</th>
+                    <th className="text-left p-3 font-medium text-gray-600">Name</th>
+                    <th className="text-left p-3 font-medium text-gray-600">Class</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3114,7 +3114,7 @@ export default function DashboardOcorrenciasPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                   <h3 className="font-semibold text-sm">
-                    Filtros Ativos ({Object.keys(activeFilters).length})
+                    Filtros Actives ({Object.keys(activeFilters).length})
                   </h3>
                 </div>
                 <button
@@ -3129,7 +3129,7 @@ export default function DashboardOcorrenciasPage() {
 
               {/* Lista de Filtros */}
               <div className="max-h-96 overflow-y-auto">
-                {Object.entries(activeFilters).map(([filterType, filterData]) => (
+                {Object.entries(activeFilters).map(([filterType, filterDate]) => (
                   <div
                     key={filterType}
                     className="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -3145,16 +3145,16 @@ export default function DashboardOcorrenciasPage() {
                             {getFilterTypeName(filterType as keyof typeof activeFilters)}
                           </p>
                           <p className="text-sm font-semibold text-gray-900 truncate">
-                            {filterData.label}
+                            {filterDate.label}
                           </p>
                         </div>
                       </div>
 
-                      {/* Botão Remover */}
+                      {/* Botão Remove */}
                       <button
                         onClick={() => removeFilter(filterType as keyof typeof activeFilters)}
                         className="flex-shrink-0 p-2 hover:bg-red-100 rounded-lg text-red-600 transition-colors group"
-                        title={`Remover filtro de ${getFilterTypeName(filterType as keyof typeof activeFilters)}`}
+                        title={`Remove filtro de ${getFilterTypeName(filterType as keyof typeof activeFilters)}`}
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -3205,7 +3205,7 @@ export default function DashboardOcorrenciasPage() {
 
             {/* Tooltip animado */}
             <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-sm font-medium px-3 py-2 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-              {showFiltersMenu ? 'Fechar' : 'Gerenciar'} {Object.keys(activeFilters).length} {Object.keys(activeFilters).length === 1 ? 'filtro' : 'filtros'}
+              {showFiltersMenu ? 'Close' : 'Gerenciar'} {Object.keys(activeFilters).length} {Object.keys(activeFilters).length === 1 ? 'filtro' : 'filtros'}
             </span>
           </button>
         </div>

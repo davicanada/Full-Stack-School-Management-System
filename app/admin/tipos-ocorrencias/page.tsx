@@ -21,7 +21,7 @@ interface OccurrenceType {
   occurrenceCount?: number;
 }
 
-interface OccurrenceTypeFormData {
+interface OccurrenceTypeFormDate {
   name: string;
   description: string;
   severity: Severity;
@@ -34,7 +34,7 @@ interface DefaultType {
   severity: Severity;
 }
 
-export default function TiposOcorrenciasPage() {
+export default function TypesOcorrenciasPage() {
   const router = useRouter();
   const [user, setUser] = useState<Usuario | null>(null);
   const [institution, setInstitution] = useState<Institution | null>(null);
@@ -49,7 +49,7 @@ export default function TiposOcorrenciasPage() {
   // Form states
   const [editingType, setEditingType] = useState<OccurrenceType | null>(null);
   const [editingTypeHasOccurrences, setEditingTypeHasOccurrences] = useState(false);
-  const [formData, setFormData] = useState<OccurrenceTypeFormData>({
+  const [formDate, setFormDate] = useState<OccurrenceTypeFormDate>({
     name: '',
     description: '',
     severity: 'leve',
@@ -62,7 +62,7 @@ export default function TiposOcorrenciasPage() {
   const defaultTypes: DefaultType[] = [
     { name: 'Atraso', description: 'Chegada após o horário estabelecido', severity: 'leve' },
     { name: 'Falta sem justificativa', description: 'Ausência não justificada às aulas', severity: 'moderada' },
-    { name: 'Não fez tarefa', description: 'Deixou de entregar atividade solicitada', severity: 'leve' },
+    { name: 'No fez tarefa', description: 'Deixou de entregar atividade solicitada', severity: 'leve' },
     { name: 'Uso de celular', description: 'Uso inadequado de aparelho celular durante as aulas', severity: 'leve' },
     { name: 'Comportamento inadequado', description: 'Comportamento que perturba o ambiente escolar', severity: 'moderada' },
     { name: 'Desrespeito ao professor', description: 'Atitudes desrespeitosas direcionadas ao educador', severity: 'grave' },
@@ -71,13 +71,13 @@ export default function TiposOcorrenciasPage() {
 
   const fetchOccurrenceTypes = useCallback(async (institutionId: string, inTrash: boolean = false) => {
       try {
-        // Buscar tipos de ocorrências
+        // Search tipos de ocorrências
         let query = supabase
           .from('occurrence_types')
           .select('*')
           .eq('institution_id', institutionId);
 
-        // Filtrar por status de lixeira
+        // Filter por status de lixeira
         if (inTrash) {
           query = query.not('deleted_at', 'is', null);
         } else {
@@ -87,8 +87,8 @@ export default function TiposOcorrenciasPage() {
         const { data: types, error: typesError } = await query.order('name');
 
         if (typesError) {
-          console.error('Erro ao buscar tipos de ocorrências:', typesError);
-          toast.error('Erro ao carregar tipos de ocorrências');
+          console.error('Error buscar tipos de ocorrências:', typesError);
+          toast.error('Error carregar tipos de ocorrências');
           return;
         }
 
@@ -109,8 +109,8 @@ export default function TiposOcorrenciasPage() {
 
         setOccurrenceTypes(typesWithCount);
       } catch (error) {
-        console.error('Erro ao buscar tipos de ocorrências:', error);
-        toast.error('Erro ao carregar tipos de ocorrências');
+        console.error('Error buscar tipos de ocorrências:', error);
+        toast.error('Error carregar tipos de ocorrências');
       }
     }, []);
 
@@ -124,32 +124,32 @@ export default function TiposOcorrenciasPage() {
           return;
         }
 
-        const userData = JSON.parse(storedUser);
+        const userDate = JSON.parse(storedUser);
         
-        if (!userData || userData.role !== 'admin') {
+        if (!userDate || userDate.role !== 'admin') {
           toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userData);
+        setUser(userDate);
 
-        const { data: institutionData, error: institutionError } = await supabase
+        const { data: institutionDate, error: institutionError } = await supabase
           .from('institutions')
           .select('*')
-          .eq('id', userData.institution_id)
+          .eq('id', userDate.institution_id)
           .single();
 
         if (institutionError) {
-          toast.error('Erro ao carregar dados da instituição');
+          toast.error('Error carregar dados da instituição');
         } else {
-          setInstitution(institutionData);
+          setInstitution(institutionDate);
         }
 
-        if (userData.institution_id) await fetchOccurrenceTypes(userData.institution_id);
+        if (userDate.institution_id) await fetchOccurrenceTypes(userDate.institution_id);
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Erro ao verificar autenticação');
+        toast.error('Error verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -172,15 +172,15 @@ export default function TiposOcorrenciasPage() {
     if (!user || !editingType) return;
 
     try {
-      if (!formData.name.trim() || !formData.description.trim()) {
-        toast.error('Nome e descrição são obrigatórios');
+      if (!formDate.name.trim() || !formDate.description.trim()) {
+        toast.error('Name e descrição são obrigatórios');
         return;
       }
 
       // Se tem ocorrências, verificar se está tentando mudar nome ou descrição
       if (editingTypeHasOccurrences) {
-        if (formData.name.trim() !== editingType.name || formData.description.trim() !== editingType.description) {
-          toast.error('Não é possível alterar o nome ou descrição de um tipo que já possui ocorrências registradas. Você só pode alterar a severidade.');
+        if (formDate.name.trim() !== editingType.name || formDate.description.trim() !== editingType.description) {
+          toast.error('No é possível alterar o nome ou descrição de um tipo que já possui ocorrências registradas. Você só pode alterar a severidade.');
           return;
         }
       }
@@ -189,7 +189,7 @@ export default function TiposOcorrenciasPage() {
       const { data: existingType } = await supabase
         .from('occurrence_types')
         .select('id')
-        .eq('name', formData.name.trim())
+        .eq('name', formDate.name.trim())
         .eq('institution_id', user.institution_id)
         .neq('id', editingType.id)
         .single();
@@ -202,28 +202,28 @@ export default function TiposOcorrenciasPage() {
       const { error } = await supabase
         .from('occurrence_types')
         .update({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          severity: formData.severity,
-          is_active: formData.is_active,
+          name: formDate.name.trim(),
+          description: formDate.description.trim(),
+          severity: formDate.severity,
+          is_active: formDate.is_active,
         })
         .eq('id', editingType.id);
 
       if (error) {
-        console.error('Erro ao atualizar tipo de ocorrência:', error);
-        toast.error('Erro ao atualizar tipo de ocorrência');
+        console.error('Error atualizar tipo de ocorrência:', error);
+        toast.error('Error atualizar tipo de ocorrência');
         return;
       }
 
-      toast.success('Tipo de ocorrência atualizado com sucesso!');
+      toast.success('Type de ocorrência updated successfully!');
       setShowModal(false);
       setEditingType(null);
       setEditingTypeHasOccurrences(false);
       resetForm();
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao atualizar tipo de ocorrência:', error);
-      toast.error('Erro ao atualizar tipo de ocorrência');
+      console.error('Error atualizar tipo de ocorrência:', error);
+      toast.error('Error atualizar tipo de ocorrência');
     }
   };
 
@@ -231,8 +231,8 @@ export default function TiposOcorrenciasPage() {
     if (!user) return;
 
     try {
-      if (!formData.name.trim() || !formData.description.trim()) {
-        toast.error('Nome e descrição são obrigatórios');
+      if (!formDate.name.trim() || !formDate.description.trim()) {
+        toast.error('Name e descrição são obrigatórios');
         return;
       }
 
@@ -240,7 +240,7 @@ export default function TiposOcorrenciasPage() {
       const { data: existingType } = await supabase
         .from('occurrence_types')
         .select('id')
-        .eq('name', formData.name.trim())
+        .eq('name', formDate.name.trim())
         .eq('institution_id', user.institution_id || '')
         .single();
 
@@ -252,10 +252,10 @@ export default function TiposOcorrenciasPage() {
       const { error } = await supabase
         .from('occurrence_types')
         .insert({
-          name: formData.name.trim(),
-          description: formData.description.trim(),
-          severity: formData.severity,
-          is_active: formData.is_active,
+          name: formDate.name.trim(),
+          description: formDate.description.trim(),
+          severity: formDate.severity,
+          is_active: formDate.is_active,
           institution_id: user.institution_id || '',
         });
 
@@ -263,13 +263,13 @@ export default function TiposOcorrenciasPage() {
         throw error;
       }
 
-      toast.success('Tipo de ocorrência criado com sucesso!');
+      toast.success('Type de ocorrência created successfully!');
       setShowModal(false);
       resetForm();
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao criar tipo de ocorrência:', error);
-      toast.error('Erro ao criar tipo de ocorrência');
+      console.error('Error criar tipo de ocorrência:', error);
+      toast.error('Error criar tipo de ocorrência');
     }
   };
 
@@ -283,16 +283,16 @@ export default function TiposOcorrenciasPage() {
         .eq('id', type.id);
 
       if (error) {
-        console.error('Erro ao alterar status:', error);
-        toast.error('Erro ao alterar status do tipo');
+        console.error('Error alterar status:', error);
+        toast.error('Error alterar status do tipo');
         return;
       }
 
-      toast.success(`Tipo ${!type.is_active ? 'ativado' : 'desativado'} com sucesso!`);
+      toast.success(`Type ${!type.is_active ? 'ativado' : 'desativado'} com sucesso!`);
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao alterar status:', error);
-      toast.error('Erro ao alterar status do tipo');
+      console.error('Error alterar status:', error);
+      toast.error('Error alterar status do tipo');
     }
   };
 
@@ -310,16 +310,16 @@ export default function TiposOcorrenciasPage() {
         .eq('id', type.id);
 
       if (error) {
-        console.error('Erro ao mover para lixeira:', error);
-        toast.error('Erro ao mover tipo para a lixeira');
+        console.error('Error mover para lixeira:', error);
+        toast.error('Error mover tipo para a lixeira');
         return;
       }
 
       toast.success(`${type.name} foi movido para a lixeira e desativado`);
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao mover para lixeira:', error);
-      toast.error('Erro ao mover tipo para a lixeira');
+      console.error('Error mover para lixeira:', error);
+      toast.error('Error mover tipo para a lixeira');
     }
   };
 
@@ -337,16 +337,16 @@ export default function TiposOcorrenciasPage() {
         .eq('id', type.id);
 
       if (error) {
-        console.error('Erro ao restaurar:', error);
-        toast.error('Erro ao restaurar tipo');
+        console.error('Error restaurar:', error);
+        toast.error('Error restaurar tipo');
         return;
       }
 
       toast.success(`${type.name} foi restaurado e reativado com sucesso`);
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao restaurar:', error);
-      toast.error('Erro ao restaurar tipo');
+      console.error('Error restaurar:', error);
+      toast.error('Error restaurar tipo');
     }
   };
 
@@ -360,7 +360,7 @@ export default function TiposOcorrenciasPage() {
       .eq('occurrence_type_id', type.id);
 
     if (occurrences && occurrences.length > 0) {
-      toast.error(`Não é possível excluir permanentemente. Existem ${occurrences.length} ocorrência(s) registrada(s) com este tipo.`);
+      toast.error(`No é possível excluir permanentemente. Existem ${occurrences.length} ocorrência(s) registrada(s) com este tipo.`);
       return;
     }
 
@@ -376,22 +376,22 @@ export default function TiposOcorrenciasPage() {
         .eq('id', type.id);
 
       if (error) {
-        console.error('Erro ao deletar tipo:', error);
-        toast.error('Erro ao deletar tipo de ocorrência');
+        console.error('Error deletar tipo:', error);
+        toast.error('Error deletar tipo de ocorrência');
         return;
       }
 
-      toast.success('Tipo de ocorrência excluído permanentemente!');
+      toast.success('Type de ocorrência excluído permanentemente!');
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao deletar tipo:', error);
-      toast.error('Erro ao deletar tipo de ocorrência');
+      console.error('Error deletar tipo:', error);
+      toast.error('Error deletar tipo de ocorrência');
     }
   };
 
   const handleAddDefaultTypes = async () => {
     if (!user || selectedDefaultTypes.length === 0) {
-      toast.error('Selecione pelo menos um tipo padrão');
+      toast.error('Select pelo menos um tipo padrão');
       return;
     }
 
@@ -428,8 +428,8 @@ export default function TiposOcorrenciasPage() {
         );
 
       if (error) {
-        console.error('Erro ao adicionar tipos padrão:', error);
-        toast.error('Erro ao adicionar tipos padrão');
+        console.error('Error adicionar tipos padrão:', error);
+        toast.error('Error adicionar tipos padrão');
         return;
       }
 
@@ -438,15 +438,15 @@ export default function TiposOcorrenciasPage() {
       setSelectedDefaultTypes([]);
       if (user.institution_id) await fetchOccurrenceTypes(user.institution_id, showTrash);
     } catch (error) {
-      console.error('Erro ao adicionar tipos padrão:', error);
-      toast.error('Erro ao adicionar tipos padrão');
+      console.error('Error adicionar tipos padrão:', error);
+      toast.error('Error adicionar tipos padrão');
     }
   };
 
   const handleEdit = (type: OccurrenceType) => {
     setEditingType(type);
     setEditingTypeHasOccurrences((type.occurrenceCount || 0) > 0);
-    setFormData({
+    setFormDate({
       name: type.name,
       description: type.description,
       severity: type.severity,
@@ -465,7 +465,7 @@ export default function TiposOcorrenciasPage() {
   };
 
   const resetForm = () => {
-    setFormData({
+    setFormDate({
       name: '',
       description: '',
       severity: 'leve',
@@ -502,7 +502,7 @@ export default function TiposOcorrenciasPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -526,10 +526,10 @@ export default function TiposOcorrenciasPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Voltar
+                Back
               </button>
               <div>
-                <h1 className="text-2xl font-bold">Tipos de Ocorrências</h1>
+                <h1 className="text-2xl font-bold">Types de Occurrences</h1>
                 <p className="text-blue-100">{institution.nome}</p>
               </div>
             </div>
@@ -550,7 +550,7 @@ export default function TiposOcorrenciasPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   )}
                 </svg>
-                {showTrash ? 'Voltar' : 'Lixeira'}
+                {showTrash ? 'Back' : 'Trash'}
               </button>
               {!showTrash && (
                 <>
@@ -561,7 +561,7 @@ export default function TiposOcorrenciasPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
-                    Adicionar Tipos Padrão
+                    Add Types Padrão
                   </button>
                   <button
                     onClick={() => setShowModal(true)}
@@ -570,7 +570,7 @@ export default function TiposOcorrenciasPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    Novo Tipo
+                    New Type
                   </button>
                 </>
               )}
@@ -606,13 +606,13 @@ export default function TiposOcorrenciasPage() {
                 onClick={() => setShowModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
               >
-                Criar Novo Tipo
+                Create New Type
               </button>
               <button
                 onClick={() => setShowDefaultTypesModal(true)}
                 className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
               >
-                Usar Tipos Padrão
+                Usar Types Padrão
               </button>
             </div>
           </div>
@@ -623,7 +623,7 @@ export default function TiposOcorrenciasPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tipo
+                      Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Severidade
@@ -634,10 +634,10 @@ export default function TiposOcorrenciasPage() {
                       </th>
                     )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ocorrências
+                      Occurrences
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ações
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -664,7 +664,7 @@ export default function TiposOcorrenciasPage() {
                                 : 'bg-red-100 text-red-800'
                             }`}
                           >
-                            {type.is_active ? 'Ativo' : 'Inativo'}
+                            {type.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                       )}
@@ -678,7 +678,7 @@ export default function TiposOcorrenciasPage() {
                               <button
                                 onClick={() => handleRestoreFromTrash(type)}
                                 className="text-green-600 hover:text-green-900 transition-colors"
-                                title="Restaurar tipo"
+                                title="Restore tipo"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -687,7 +687,7 @@ export default function TiposOcorrenciasPage() {
                               <button
                                 onClick={() => handlePermanentDelete(type)}
                                 className="text-red-600 hover:text-red-900 transition-colors"
-                                title="Excluir permanentemente"
+                                title="Delete permanentemente"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -699,7 +699,7 @@ export default function TiposOcorrenciasPage() {
                               <button
                                 onClick={() => handleEdit(type)}
                                 className="text-blue-600 hover:text-blue-900 transition-colors"
-                                title="Editar tipo"
+                                title="Edit tipo"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -708,7 +708,7 @@ export default function TiposOcorrenciasPage() {
                               <button
                                 onClick={() => handleToggleStatus(type)}
                                 className={`${type.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'} transition-colors`}
-                                title={type.is_active ? 'Desativar' : 'Ativar'}
+                                title={type.is_active ? 'Deactivate' : 'Activate'}
                               >
                                 {type.is_active ? (
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -748,7 +748,7 @@ export default function TiposOcorrenciasPage() {
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                {editingType ? 'Editar Tipo de Ocorrência' : 'Novo Tipo de Ocorrência'}
+                {editingType ? 'Edit Type de Occurrence' : 'New Type de Occurrence'}
               </h3>
               <button
                 onClick={closeModal}
@@ -779,13 +779,13 @@ export default function TiposOcorrenciasPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome *
+                  Name *
                 </label>
                 <input
                   type="text"
                   id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formDate.name}
+                  onChange={(e) => setFormDate({ ...formDate, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="Ex: Atraso, Indisciplina"
                   disabled={editingType && editingTypeHasOccurrences}
@@ -797,12 +797,12 @@ export default function TiposOcorrenciasPage() {
               </div>
               <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                  Descrição *
+                  Description *
                 </label>
                 <textarea
                   id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  value={formDate.description}
+                  onChange={(e) => setFormDate({ ...formDate, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   rows={3}
                   placeholder="Descreva o tipo de ocorrência..."
@@ -819,8 +819,8 @@ export default function TiposOcorrenciasPage() {
                 </label>
                 <select
                   id="severity"
-                  value={formData.severity}
-                  onChange={(e) => setFormData({ ...formData, severity: e.target.value as Severity })}
+                  value={formDate.severity}
+                  onChange={(e) => setFormDate({ ...formDate, severity: e.target.value as Severity })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -833,12 +833,12 @@ export default function TiposOcorrenciasPage() {
                 <input
                   type="checkbox"
                   id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  checked={formDate.is_active}
+                  onChange={(e) => setFormDate({ ...formDate, is_active: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="is_active" className="ml-2 text-sm text-gray-700">
-                  Tipo ativo
+                  Type ativo
                 </label>
               </div>
               <div className="flex gap-3 pt-4">
@@ -847,13 +847,13 @@ export default function TiposOcorrenciasPage() {
                   onClick={closeModal}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors duration-200"
                 >
-                  {editingType ? 'Salvar' : 'Criar'}
+                  {editingType ? 'Save' : 'Create'}
                 </button>
               </div>
             </form>
@@ -866,7 +866,7 @@ export default function TiposOcorrenciasPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Adicionar Tipos Padrão</h3>
+              <h3 className="text-lg font-semibold text-gray-900">Add Types Padrão</h3>
               <button
                 onClick={() => setShowDefaultTypesModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -877,7 +877,7 @@ export default function TiposOcorrenciasPage() {
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Selecione os tipos de ocorrências padrão que deseja adicionar à sua instituição:
+              Select os tipos de ocorrências padrão que deseja adicionar à sua instituição:
             </p>
             <div className="space-y-3">
               {defaultTypes.map((type) => (
@@ -918,7 +918,7 @@ export default function TiposOcorrenciasPage() {
                 }}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200"
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 type="button"
@@ -926,7 +926,7 @@ export default function TiposOcorrenciasPage() {
                 disabled={selectedDefaultTypes.length === 0}
                 className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-2 px-4 rounded-lg transition-colors duration-200"
               >
-                Adicionar {selectedDefaultTypes.length} Tipo(s)
+                Add {selectedDefaultTypes.length} Type(s)
               </button>
             </div>
           </div>

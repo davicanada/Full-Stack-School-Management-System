@@ -29,7 +29,7 @@ interface PendingRequest {
 
 type ActiveTab = 'active' | 'pending' | 'trash';
 
-export default function ProfessoresPage() {
+export default function TeacheresPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [user, setUser] = useState<Usuario | null>(null);
@@ -40,23 +40,23 @@ export default function ProfessoresPage() {
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Estados para ordenação
+  // States para ordenação
   const [orderBy, setOrderBy] = useState<'name' | 'email' | 'created_at' | 'status'>('name');
   const [orderDirection, setOrderDirection] = useState<'asc' | 'desc'>('asc');
   
-  // Estados para filtros
+  // States para filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   
-  // Estados para paginação
+  // States para paginação
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   
   const fetchTeachers = useCallback(async (institutionId: string) => {
-      console.log('🔍 Buscando professores para instituição:', institutionId);
+      console.log('🔍 Searching for teachers for institution:', institutionId);
 
       try {
-        // Buscar professores através da tabela user_institutions (EXCLUINDO lixeira)
+        // Fetch teachers through user_institutions table (EXCLUDING trash)
         const { data: userInstitutions, error } = await supabase
           .from('user_institutions')
           .select(`
@@ -77,33 +77,33 @@ export default function ProfessoresPage() {
           .is('users.deleted_at', null);
 
         if (error) {
-          console.error('Erro específico ao buscar professores:', error);
-          console.error('Código do erro:', error.code);
-          console.error('Mensagem do erro:', error.message);
-          toast.error(`Erro ao carregar professores: ${error.message}`);
+          console.error('Specific error fetching teachers:', error);
+          console.error('Error code:', error.code);
+          console.error('Error message:', error.message);
+          toast.error(`Error loading teachers: ${error.message}`);
           return;
         }
 
-        console.log('Professores encontrados:', userInstitutions?.length || 0);
+        console.log('Teachers found:', userInstitutions?.length || 0);
 
-        // Contar turmas e ocorrências para cada professor
+        // Count classes and occurrences for each teacher
         const teachersWithCounts = await Promise.all(
           (userInstitutions || [])
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((ui: any) => ui.users) // Filtrar resultados válidos
+            .filter((ui: any) => ui.users) // Filter valid results
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             .map(async (ui: any) => {
               const teacher = ui.users;
-              
+
               try {
-                // Contar turmas onde o professor é responsável
+                // Count classes where teacher is responsible
                 const { count: classCount } = await supabase
                   .from('classes')
                   .select('*', { count: 'exact', head: true })
                   .eq('teacher_id', teacher.id)
                   .eq('institution_id', institutionId);
 
-                // Contar ocorrências registradas pelo professor
+                // Count occurrences recorded by teacher
                 const { count: occurrenceCount } = await supabase
                   .from('occurrences')
                   .select('*', { count: 'exact', head: true })
@@ -112,15 +112,15 @@ export default function ProfessoresPage() {
 
                 return {
                   ...teacher,
-                  userInstitutionId: ui.id, // Adicionar o ID do user_institutions para o delete
+                  userInstitutionId: ui.id, // Add user_institutions ID for delete
                   classCount: classCount || 0,
                   occurrenceCount: occurrenceCount || 0
                 };
               } catch (countError) {
-                console.warn('Erro ao contar dados do professor', teacher.name, countError);
+                console.warn('Error counting teacher data', teacher.name, countError);
                 return {
                   ...teacher,
-                  userInstitutionId: ui.id, // Adicionar o ID do user_institutions para o delete
+                  userInstitutionId: ui.id, // Add user_institutions ID for delete
                   classCount: 0,
                   occurrenceCount: 0
                 };
@@ -128,11 +128,11 @@ export default function ProfessoresPage() {
             })
         );
 
-        console.log('Professores processados:', teachersWithCounts.length);
+        console.log('Teachers processed:', teachersWithCounts.length);
         setTeachers(teachersWithCounts);
       } catch (error: unknown) {
-        console.error('Erro de exceção ao buscar professores:', error);
-        toast.error('Erro inesperado ao carregar professores');
+        console.error('Exception error fetching teachers:', error);
+        toast.error('Unexpected error loading teachers');
       }
     }, []);
 
@@ -155,7 +155,7 @@ export default function ProfessoresPage() {
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('Erro ao buscar solicitações:', error);
+          console.error('Error buscar solicitações:', error);
           
           // Verificar códigos de erro específicos
           if (error.code === '42P01') {
@@ -163,14 +163,14 @@ export default function ProfessoresPage() {
           } else if (error.code === '42703') {
             toast.error('Campo não encontrado na tabela access_requests');
           } else {
-            toast.error(`Erro ao carregar solicitações: ${error.message}`);
+            toast.error(`Error carregar solicitações: ${error.message}`);
           }
           
           setPendingRequests([]);
           return;
         }
 
-        console.log('✅ Solicitações encontradas:', data?.length || 0);
+        console.log('✅ Requests encontradas:', data?.length || 0);
         setPendingRequests(data || []);
       } catch (error: unknown) {
         console.error('❌ EXCEÇÃO CRÍTICA ao buscar solicitações:', error);
@@ -181,10 +181,10 @@ export default function ProfessoresPage() {
         // Mostrar erro mais específico - APENAS UMA VEZ
         if (error instanceof Error && error.message && error.message.includes('relation "access_requests" does not exist')) {
           console.error('Tabela access_requests não existe no banco de dados');
-          // Não mostrar toast aqui para evitar duplicação
+          // No mostrar toast aqui para evitar duplicação
         } else if (error instanceof Error) {
           console.error('Erro inesperado:', error.message);
-          // Não mostrar toast aqui para evitar duplicação
+          // No mostrar toast aqui para evitar duplicação
         }
       }
     }, []);
@@ -193,7 +193,7 @@ export default function ProfessoresPage() {
       console.log('🗑️ Buscando professores na lixeira para instituição:', institutionId);
 
       try {
-        // Buscar professores na lixeira através da tabela user_institutions
+        // Search professores na lixeira através da tabela user_institutions
         const { data: userInstitutions, error } = await supabase
           .from('user_institutions')
           .select(`
@@ -214,12 +214,12 @@ export default function ProfessoresPage() {
           .not('users.deleted_at', 'is', null);
 
         if (error) {
-          console.error('Erro ao buscar professores na lixeira:', error);
-          toast.error(`Erro ao carregar lixeira: ${error.message}`);
+          console.error('Error buscar professores na lixeira:', error);
+          toast.error(`Error carregar lixeira: ${error.message}`);
           return;
         }
 
-        console.log('Professores na lixeira encontrados:', userInstitutions?.length || 0);
+        console.log('Teacheres na lixeira encontrados:', userInstitutions?.length || 0);
 
         // Contar turmas e ocorrências para cada professor na lixeira
         const trashedWithCounts = await Promise.all(
@@ -250,7 +250,7 @@ export default function ProfessoresPage() {
                   occurrenceCount: occurrenceCount || 0
                 };
               } catch (countError) {
-                console.warn('Erro ao contar dados do professor na lixeira', teacher.name, countError);
+                console.warn('Error contar dados do professor na lixeira', teacher.name, countError);
                 return {
                   ...teacher,
                   userInstitutionId: ui.id,
@@ -261,10 +261,10 @@ export default function ProfessoresPage() {
             })
         );
 
-        console.log('Professores na lixeira processados:', trashedWithCounts.length);
+        console.log('Teacheres na lixeira processados:', trashedWithCounts.length);
         setTrashedTeachers(trashedWithCounts);
       } catch (error: unknown) {
-        console.error('Erro ao buscar professores na lixeira:', error);
+        console.error('Error buscar professores na lixeira:', error);
         toast.error('Erro inesperado ao carregar lixeira');
       }
     }, []);
@@ -279,41 +279,41 @@ export default function ProfessoresPage() {
           return;
         }
 
-        const userData = JSON.parse(storedUser);
+        const userDate = JSON.parse(storedUser);
         
-        if (!userData || userData.role !== 'admin') {
+        if (!userDate || userDate.role !== 'admin') {
           toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userData);
-        console.log('Usuário autenticado:', userData);
+        setUser(userDate);
+        console.log('User autenticado:', userDate);
 
-        const { data: institutionData, error: institutionError } = await supabase
+        const { data: institutionDate, error: institutionError } = await supabase
           .from('institutions')
           .select('*')
-          .eq('id', userData.institution_id)
+          .eq('id', userDate.institution_id)
           .single();
 
         if (institutionError) {
-          console.error('Erro ao carregar instituição:', institutionError);
-          toast.error('Erro ao carregar dados da instituição');
+          console.error('Error carregar instituição:', institutionError);
+          toast.error('Error carregar dados da instituição');
         } else {
-          setInstitution(institutionData);
-          console.log('Instituição carregada:', institutionData);
+          setInstitution(institutionDate);
+          console.log('Institution carregada:', institutionDate);
         }
 
         console.log('Iniciando carregamento de professores, lixeira e solicitações...');
         await Promise.all([
-          fetchTeachers(userData.institution_id),
-          fetchTrashedTeachers(userData.institution_id),
-          fetchPendingRequests(userData.institution_id)
+          fetchTeachers(userDate.institution_id),
+          fetchTrashedTeachers(userDate.institution_id),
+          fetchPendingRequests(userDate.institution_id)
         ]);
         console.log('Carregamento concluído');
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Erro ao verificar autenticação');
+        toast.error('Error verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -337,12 +337,12 @@ export default function ProfessoresPage() {
   const handleApproveTeacher = async (request: PendingRequest) => {
     if (!user) return;
 
-    const confirmed = window.confirm(`Aprovar solicitação de ${request.name}?`);
+    const confirmed = window.confirm(`Approve solicitação de ${request.name}?`);
     if (!confirmed) return;
 
     console.log('🟡 INICIANDO APROVAÇÃO DE PROFESSOR');
-    console.log('Solicitação:', request);
-    console.log('Usuário aprovador:', user);
+    console.log('Request:', request);
+    console.log('User aprovador:', user);
 
     try {
       // 🔍 Primeiro buscar os dados completos da solicitação incluindo institution_id
@@ -354,14 +354,14 @@ export default function ProfessoresPage() {
         .single();
 
       if (requestError) {
-        console.error('❌ Erro ao buscar dados da solicitação:', requestError);
-        toast.error('Erro ao buscar dados da solicitação');
+        console.error('❌ Error buscar dados da solicitação:', requestError);
+        toast.error('Error buscar dados da solicitação');
         return;
       }
 
       if (!fullRequest.institution_id) {
-        console.error('❌ Erro: Solicitação sem institution_id');
-        toast.error('Erro: Solicitação não possui instituição definida');
+        console.error('❌ Erro: Request sem institution_id');
+        toast.error('Erro: Request não possui instituição definida');
         return;
       }
 
@@ -391,16 +391,16 @@ export default function ProfessoresPage() {
         .single();
 
       if (userError) {
-        console.error('❌ Erro ao criar usuário:', userError);
-        toast.error(`Erro ao criar professor: ${userError.message}`);
+        console.error('❌ Error criar usuário:', userError);
+        toast.error(`Error criar professor: ${userError.message}`);
         return;
       }
 
-      console.log('✅ Novo usuário criado com sucesso:', newUser);
-      console.log('1. Usuário criado:', newUser);
+      console.log('✅ New usuário created successfully:', newUser);
+      console.log('1. User criado:', newUser);
       console.log('2. ID do usuário:', newUser?.id);
       console.log('3. Institution ID:', fullRequest.institution_id);
-      console.log('Tipo de newUser:', typeof newUser);
+      console.log('Type de newUser:', typeof newUser);
       console.log('É array?', Array.isArray(newUser));
       console.log('newUser completo:', JSON.stringify(newUser, null, 2));
       
@@ -412,22 +412,22 @@ export default function ProfessoresPage() {
       if (!userId) {
         console.error('ERRO: ID do usuário não encontrado!');
         console.error('newUser recebido:', newUser);
-        toast.error('Erro ao criar vínculo - ID do usuário não encontrado');
+        toast.error('Error criar vínculo - ID do usuário não encontrado');
         return;
       }
 
       // SIMPLIFICADO: Como é usuário novo, pode prosseguir diretamente
-      console.log('✅ Usuário novo, criando vínculo com a instituição');
+      console.log('✅ User novo, criando vínculo com a instituição');
 
-      // Criar vínculo professor com a instituição (para consistência futura)
+      // Create vínculo professor com a instituição (para consistência futura)
       console.log('🔗 Criando vínculo professor com instituição:', fullRequest.institution_id);
-      console.log('Professor tem institution_id direto + vínculo em user_institutions para consistência:', {
+      console.log('Teacher tem institution_id direto + vínculo em user_institutions para consistência:', {
         user_id: userId,
         institution_id: fullRequest.institution_id,
         role: 'professor'
       });
       
-      const { data: linkData, error: linkError } = await supabase
+      const { data: linkDate, error: linkError } = await supabase
         .from('user_institutions')
         .insert({
           user_id: userId,
@@ -436,20 +436,20 @@ export default function ProfessoresPage() {
         })
         .select();
       
-      console.log('5. Resultado do insert:', { linkData, linkError });
+      console.log('5. Resultado do insert:', { linkDate, linkError });
       
       if (linkError) {
         console.error('ERRO ao criar vínculo:', linkError);
         console.error('Código do erro:', linkError.code);
         console.error('Mensagem do erro:', linkError.message);
-        console.error('Detalhes do erro:', linkError.details);
+        console.error('Details do erro:', linkError.details);
         console.error('Hint do erro:', linkError.hint);
-        toast.error('Erro ao criar vínculo: ' + linkError.message);
+        toast.error('Error criar vínculo: ' + linkError.message);
         return;
       }
       
-      console.log('✅ Professor vinculado à instituição com sucesso');
-      console.log('6. Dados do vínculo criado:', linkData);
+      console.log('✅ Teacher vinculado à instituição com sucesso');
+      console.log('6. Dados do vínculo criado:', linkDate);
 
       // Verificar se o vínculo foi criado
       const { data: checkLink, error: checkError } = await supabase
@@ -462,7 +462,7 @@ export default function ProfessoresPage() {
       console.log('7. Verificação do vínculo criado:', checkLink);
       console.log('8. Erro na verificação (se houver):', checkError);
 
-      // Atualizar status da solicitação
+      // Update status da solicitação
       console.log('🔄 Atualizando status da solicitação...');
       const { error: updateError } = await supabase
         .from('access_requests')
@@ -474,20 +474,20 @@ export default function ProfessoresPage() {
         .eq('id', request.id);
 
       if (updateError) {
-        console.error('❌ Erro ao atualizar solicitação:', updateError);
+        console.error('❌ Error atualizar solicitação:', updateError);
         console.error('Código do erro:', updateError.code);
         console.error('Mensagem do erro:', updateError.message);
         
         if (updateError.code === '42501') {
           toast.error('Erro de permissão: Verifique políticas RLS na tabela access_requests');
         } else {
-          toast.error(`Erro ao atualizar solicitação: ${updateError.message}`);
+          toast.error(`Error atualizar solicitação: ${updateError.message}`);
         }
         return;
       }
 
       console.log('✅ APROVAÇÃO CONCLUÍDA COM SUCESSO!');
-      toast.success('Professor aprovado com sucesso!');
+      toast.success('Teacher approved successfully!');
       
       // Recarregar dados sequencialmente para evitar sobrecarga
       try {
@@ -498,7 +498,7 @@ export default function ProfessoresPage() {
         }
         console.log('✅ Dados recarregados com sucesso');
       } catch (refreshError) {
-        console.warn('Erro ao recarregar dados após aprovação:', refreshError);
+        console.warn('Error recarregar dados após aprovação:', refreshError);
       }
     } catch (error) {
       console.error('❌ ERRO CRÍTICO ao aprovar professor:', error);
@@ -509,7 +509,7 @@ export default function ProfessoresPage() {
   const handleRejectTeacher = async (request: PendingRequest) => {
     if (!user) return;
 
-    const confirmed = window.confirm(`Rejeitar solicitação de ${request.name}?`);
+    const confirmed = window.confirm(`Reject solicitação de ${request.name}?`);
     if (!confirmed) return;
 
     try {
@@ -523,16 +523,16 @@ export default function ProfessoresPage() {
         .eq('id', request.id);
 
       if (error) {
-        console.error('Erro ao rejeitar solicitação:', error);
-        toast.error('Erro ao rejeitar solicitação');
+        console.error('Error rejeitar solicitação:', error);
+        toast.error('Error rejeitar solicitação');
         return;
       }
 
-      toast.success('Solicitação rejeitada');
+      toast.success('Request rejeitada');
       if (user.institution_id) await fetchPendingRequests(user.institution_id);
     } catch (error) {
-      console.error('Erro ao rejeitar solicitação:', error);
-      toast.error('Erro ao rejeitar solicitação');
+      console.error('Error rejeitar solicitação:', error);
+      toast.error('Error rejeitar solicitação');
     }
   };
 
@@ -541,7 +541,7 @@ export default function ProfessoresPage() {
     if (!user) return;
 
     const confirmed = window.confirm(
-      `Tem certeza que deseja mover ${teacher.name} para a lixeira?\n\n` +
+      `Are you sure you want to mover ${teacher.name} para a lixeira?\n\n` +
       `O professor será desativado automaticamente e poderá ser restaurado depois.`
     );
     if (!confirmed) return;
@@ -557,8 +557,8 @@ export default function ProfessoresPage() {
         .eq('id', teacher.id);
 
       if (error) {
-        console.error('Erro ao mover professor para lixeira:', error);
-        toast.error('Erro ao mover para lixeira');
+        console.error('Error mover professor para lixeira:', error);
+        toast.error('Error mover para lixeira');
         return;
       }
 
@@ -568,8 +568,8 @@ export default function ProfessoresPage() {
         await fetchTrashedTeachers(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao mover professor para lixeira:', error);
-      toast.error('Erro ao mover para lixeira');
+      console.error('Error mover professor para lixeira:', error);
+      toast.error('Error mover para lixeira');
     }
   };
 
@@ -577,7 +577,7 @@ export default function ProfessoresPage() {
     if (!user) return;
 
     const confirmed = window.confirm(
-      `Restaurar ${teacher.name} da lixeira?\n\n` +
+      `Restore ${teacher.name} da lixeira?\n\n` +
       `O professor será reativado automaticamente.`
     );
     if (!confirmed) return;
@@ -593,8 +593,8 @@ export default function ProfessoresPage() {
         .eq('id', teacher.id);
 
       if (error) {
-        console.error('Erro ao restaurar professor:', error);
-        toast.error('Erro ao restaurar professor');
+        console.error('Error restaurar professor:', error);
+        toast.error('Error restaurar professor');
         return;
       }
 
@@ -604,8 +604,8 @@ export default function ProfessoresPage() {
         await fetchTrashedTeachers(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao restaurar professor:', error);
-      toast.error('Erro ao restaurar professor');
+      console.error('Error restaurar professor:', error);
+      toast.error('Error restaurar professor');
     }
   };
 
@@ -613,7 +613,7 @@ export default function ProfessoresPage() {
     if (!user) return;
 
     const confirmDelete = window.confirm(
-      `ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE ${userName}?\n\n` +
+      `ATENÇÃO: Are you sure you want to EXCLUIR PERMANENTEMENTE ${userName}?\n\n` +
       `Esta ação NÃO PODE SER DESFEITA.`
     );
 
@@ -629,7 +629,7 @@ export default function ProfessoresPage() {
       if (occurrencesError) throw occurrencesError;
 
       if (occurrences && occurrences.length > 0) {
-        toast.error(`Não é possível excluir. Existem ${occurrences.length} ocorrência(s) registrada(s) por este professor.`);
+        toast.error(`No é possível excluir. Existem ${occurrences.length} ocorrência(s) registrada(s) por este professor.`);
         return;
       }
 
@@ -653,8 +653,8 @@ export default function ProfessoresPage() {
         await fetchTrashedTeachers(user.institution_id);
       }
     } catch (error) {
-      console.error('Erro ao deletar professor:', error);
-      toast.error('Erro ao deletar professor');
+      console.error('Error deletar professor:', error);
+      toast.error('Error deletar professor');
     }
   };
 
@@ -670,7 +670,7 @@ export default function ProfessoresPage() {
       setOrderBy(column);
       setOrderDirection('asc');
     }
-    setCurrentPage(1); // Voltar para primeira página ao ordenar
+    setCurrentPage(1); // Back para primeira página ao ordenar
   };
 
   const getSortIcon = (column: 'name' | 'email' | 'created_at' | 'status') => {
@@ -752,32 +752,32 @@ export default function ProfessoresPage() {
   const activeTeachers = teachers.filter(t => t.is_active).length;
   const inactiveTeachers = teachers.filter(t => !t.is_active).length;
 
-  // Função para limpar filtros
+  // Function to limpar filtros
   const clearFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
     setCurrentPage(1);
   };
 
-  // Função para lidar com busca
+  // Function to lidar com busca
   const handleSearch = (term: string) => {
     setSearchTerm(term);
     setCurrentPage(1);
   };
 
-  // Função para lidar com filtro de status
+  // Function to lidar com filtro de status
   const handleStatusFilter = (filter: 'all' | 'active' | 'inactive') => {
     setStatusFilter(filter);
     setCurrentPage(1);
   };
 
-  // Função para mudar itens por página
+  // Function to mudar itens por página
   const changeItemsPerPage = () => {
     setCurrentPage(1);
     // Note: itemsPerPage is currently const, but we keep this function for interface compatibility
   };
 
-  // Função para ir para página específica
+  // Function to ir para página específica
   const goToPage = (page: number) => {
     setCurrentPage(page);
   };
@@ -787,7 +787,7 @@ export default function ProfessoresPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -811,10 +811,10 @@ export default function ProfessoresPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Voltar
+                Back
               </button>
               <div>
-                <h1 className="text-2xl font-bold">Gerenciar Professores</h1>
+                <h1 className="text-2xl font-bold">Gerenciar Teacheres</h1>
                 <p className="text-blue-100">{institution.nome}</p>
               </div>
             </div>
@@ -834,7 +834,7 @@ export default function ProfessoresPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Professores Ativos
+              Teacheres Actives
               <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2.5 rounded-full text-xs font-medium">
                 {teachers.length}
               </span>
@@ -847,7 +847,7 @@ export default function ProfessoresPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              Solicitações Pendentes
+              Requests Pendings
               {pendingRequests.length > 0 && (
                 <span className="ml-2 bg-red-100 text-red-800 py-0.5 px-2.5 rounded-full text-xs font-medium">
                   {pendingRequests.length}
@@ -862,7 +862,7 @@ export default function ProfessoresPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
-              🗑️ Lixeira
+              🗑️ Trash
               {trashedTeachers.length > 0 && (
                 <span className="ml-2 bg-orange-100 text-orange-800 py-0.5 px-2.5 rounded-full text-xs font-medium">
                   {trashedTeachers.length}
@@ -882,7 +882,7 @@ export default function ProfessoresPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-sm text-blue-800">
-              <strong>Desativar:</strong> Mantém vínculo inativo | <strong>Remover:</strong> Remove da instituição
+              <strong>Deactivate:</strong> Mantém vínculo inativo | <strong>Remove:</strong> Remove da instituição
             </span>
           </div>
         </div>
@@ -894,7 +894,7 @@ export default function ProfessoresPage() {
                 {/* Busca */}
                 <div className="flex-1 w-full lg:max-w-md">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    🔍 Buscar Professor
+                    🔍 Search Teacher
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -904,7 +904,7 @@ export default function ProfessoresPage() {
                     </div>
                     <input
                       type="text"
-                      placeholder="Nome ou email..."
+                      placeholder="Name ou email..."
                       value={searchTerm}
                       onChange={(e) => handleSearch(e.target.value)}
                       className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
@@ -915,7 +915,7 @@ export default function ProfessoresPage() {
                 {/* Filtro de Status */}
                 <div className="w-full lg:w-auto">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    🎯 Filtrar por Status
+                    🎯 Filter por Status
                   </label>
                   <select
                     value={statusFilter}
@@ -923,15 +923,15 @@ export default function ProfessoresPage() {
                     className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors"
                   >
                     <option value="all">Todos ({teachers.length})</option>
-                    <option value="active">Ativos ({activeTeachers})</option>
-                    <option value="inactive">Inativos ({inactiveTeachers})</option>
+                    <option value="active">Actives ({activeTeachers})</option>
+                    <option value="inactive">Inactives ({inactiveTeachers})</option>
                   </select>
                 </div>
                 
                 {/* Botão Limpar Filtros */}
                 <div className="w-full lg:w-auto flex flex-col">
                   <label className="block text-sm font-medium text-gray-700 mb-2 opacity-0">
-                    Ações
+                    Actions
                   </label>
                   <button
                     onClick={clearFilters}
@@ -1003,7 +1003,7 @@ export default function ProfessoresPage() {
                           onClick={() => handleSort('name')}
                         >
                           <div className="flex items-center gap-2">
-                            <span>Professor</span>
+                            <span>Teacher</span>
                             <div className="flex flex-col">
                               {getSortIcon('name')}
                             </div>
@@ -1023,10 +1023,10 @@ export default function ProfessoresPage() {
                           </div>
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Turmas
+                          Classs
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ocorrências
+                          Occurrences
                         </th>
                         <th 
                           className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none transition-colors group ${
@@ -1035,14 +1035,14 @@ export default function ProfessoresPage() {
                           onClick={() => handleSort('created_at')}
                         >
                           <div className="flex items-center gap-2">
-                            <span>Data de Entrada</span>
+                            <span>Date de Entrada</span>
                             <div className="flex flex-col">
                               {getSortIcon('created_at')}
                             </div>
                           </div>
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
+                          Actions
                         </th>
                       </tr>
                     </thead>
@@ -1063,7 +1063,7 @@ export default function ProfessoresPage() {
                                   : 'bg-red-100 text-red-800'
                               }`}
                             >
-                              {teacher.is_active ? 'Ativo' : 'Inativo'}
+                              {teacher.is_active ? 'Active' : 'Inactive'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1077,7 +1077,7 @@ export default function ProfessoresPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end gap-2">
-                              {/* Botão Lixeira - Admins e Master */}
+                              {/* Botão Trash - Admins e Master */}
                               <button
                                 onClick={() => handleMoveToTrash(teacher)}
                                 className="text-orange-600 hover:text-orange-900 transition-colors"
@@ -1088,12 +1088,12 @@ export default function ProfessoresPage() {
                                 </svg>
                               </button>
 
-                              {/* Botão Deletar Permanentemente - APENAS Master */}
+                              {/* Botão Delete Permanentemente - APENAS Master */}
                               {user.role === 'master' && (
                                 <button
                                   onClick={() => handleRemoveFromInstitution(teacher.id, teacher.name)}
                                   className="text-red-600 hover:text-red-900 transition-colors"
-                                  title="Deletar PERMANENTEMENTE (apenas Master)"
+                                  title="Delete PERMANENTEMENTE (apenas Master)"
                                 >
                                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -1245,7 +1245,7 @@ export default function ProfessoresPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Nenhuma solicitação pendente
+                  No pending requests
                 </h3>
                 <p className="text-gray-500">
                   As solicitações de novos professores aparecerão aqui para aprovação
@@ -1261,10 +1261,10 @@ export default function ProfessoresPage() {
                           Solicitante
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data da Solicitação
+                          Date da Request
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
+                          Actions
                         </th>
                       </tr>
                     </thead>
@@ -1286,13 +1286,13 @@ export default function ProfessoresPage() {
                                 onClick={() => handleApproveTeacher(request)}
                                 className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200"
                               >
-                                Aprovar
+                                Approve
                               </button>
                               <button
                                 onClick={() => handleRejectTeacher(request)}
                                 className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200"
                               >
-                                Rejeitar
+                                Reject
                               </button>
                             </div>
                           </td>
@@ -1308,14 +1308,14 @@ export default function ProfessoresPage() {
 
         {activeTab === 'trash' && (
           <div>
-            {/* Info sobre Lixeira */}
+            {/* Info sobre Trash */}
             <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-sm text-orange-800">
-                  <strong>Lixeira:</strong> Professores removidos mas que podem ser restaurados.
+                  <strong>Trash:</strong> Teacheres removidos mas que podem ser restaurados.
                   {user.role === 'master' && <span className="ml-1">Como Master, você pode deletar permanentemente.</span>}
                 </span>
               </div>
@@ -1329,10 +1329,10 @@ export default function ProfessoresPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Lixeira vazia
+                  Trash vazia
                 </h3>
                 <p className="text-gray-500">
-                  Professores movidos para a lixeira aparecerão aqui
+                  Teacheres movidos para a lixeira aparecerão aqui
                 </p>
               </div>
             ) : (
@@ -1342,19 +1342,19 @@ export default function ProfessoresPage() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Professor
+                          Teacher
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Turmas
+                          Classs
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ocorrências
+                          Occurrences
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Removido em
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
+                          Actions
                         </th>
                       </tr>
                     </thead>
@@ -1378,29 +1378,29 @@ export default function ProfessoresPage() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end gap-2">
-                              {/* Botão Restaurar - Todos podem usar */}
+                              {/* Botão Restore - Todos podem usar */}
                               <button
                                 onClick={() => handleRestoreFromTrash(teacher)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200 flex items-center gap-1"
-                                title="Restaurar professor"
+                                title="Restore professor"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                Restaurar
+                                Restore
                               </button>
 
-                              {/* Botão Deletar Permanentemente - APENAS Master */}
+                              {/* Botão Delete Permanentemente - APENAS Master */}
                               {user.role === 'master' && (
                                 <button
                                   onClick={() => handleRemoveFromInstitution(teacher.id, teacher.name)}
                                   className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200 flex items-center gap-1"
-                                  title="Deletar PERMANENTEMENTE"
+                                  title="Delete PERMANENTEMENTE"
                                 >
                                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                                   </svg>
-                                  Deletar
+                                  Delete
                                 </button>
                               )}
                             </div>
