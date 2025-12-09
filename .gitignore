@@ -34,3 +34,31 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# Development documentation (internal notes - not for public repo)
+*_ERROR_FIXES.md
+*_ANALYSIS*.md
+*_REPORT.md
+*_IMPLEMENTACAO*.md
+*_FIXES.md
+*_IMPROVEMENTS.md
+COPIE_E_COLE_*.txt
+execute-sql.js
+test-*.js
+test-*.md
+PROXIMOS_PASSOS.md
+README_TESTES.md
+
+# Keep production SQL in database/ folder only
+database-fixes.sql
+database-trash-system.sql
