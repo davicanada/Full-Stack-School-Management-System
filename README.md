@@ -1,36 +1,149 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema de Gestão de Ocorrências Escolares
 
-## Getting Started
+Sistema completo desenvolvido em Next.js 14 com TypeScript para gerenciar ocorrências disciplinares, pedagógicas e administrativas em instituições de ensino.
 
-First, run the development server:
+## 🚀 Tecnologias Utilizadas
+
+- **Next.js 14** - Framework React com App Router
+- **TypeScript** - Tipagem estática para JavaScript
+- **Tailwind CSS** - Framework de CSS utilitário
+- **Supabase** - Backend-as-a-Service (autenticação e banco de dados)
+- **ESLint** - Linter para qualidade de código
+
+## 📦 Instalação
 
 ```bash
+# Clone o repositório
+cd gestao-escolar
+
+# Instale as dependências
+npm install
+
+# Configure as variáveis de ambiente
+# As credenciais do Supabase já estão configuradas no .env.local
+
+# Execute em modo de desenvolvimento
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🌐 Acesso
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+O sistema estará disponível em: http://localhost:3000
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🎨 Funcionalidades da Interface
 
-## Learn More
+### Página Inicial
+- **Header responsivo** com nome do sistema e ícone educacional
+- **Botão de Login** - Abre modal para autenticação
+- **Botão Solicitar Acesso** - Formulário para novos usuários
+- **Cards informativos** sobre funcionalidades do sistema
+- **Design responsivo** que adapta a diferentes dispositivos
+- **Modo escuro** suportado
 
-To learn more about Next.js, take a look at the following resources:
+### Modais Interativos
+- **Modal de Login** - Formulário com email e senha
+- **Modal de Solicitação** - Cadastro completo com validações
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📁 Estrutura do Projeto
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+gestao-escolar/
+├── app/                    # Páginas do App Router
+│   ├── page.tsx           # Página inicial
+│   ├── layout.tsx         # Layout base
+│   └── globals.css        # Estilos globais
+├── components/             # Componentes reutilizáveis
+├── lib/                   # Utilitários e configurações
+│   └── supabase/          # Configuração do Supabase
+│       └── client.ts      # Cliente Supabase
+├── database/              # 🗄️ Database architecture & SQL
+│   ├── README.md         # Complete database documentation
+│   ├── schema.sql        # Full database schema
+│   ├── migrations/       # Versioned database migrations
+│   │   ├── 001_database_architecture_fixes.sql
+│   │   └── 002_trash_system.sql
+│   └── examples/         # SQL query examples
+│       └── queries.sql   # Advanced analytics & reporting queries
+├── types/                 # Tipos TypeScript
+│   └── index.ts          # Interfaces do sistema
+├── .env.local            # Variáveis de ambiente
+└── package.json          # Dependências do projeto
+```
 
-## Deploy on Vercel
+## 🗄️ Database Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project features a **production-ready PostgreSQL database** with advanced features:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Key Features
+- **Multi-tenant architecture** supporting multiple institutions
+- **Row Level Security (RLS)** for data isolation and security
+- **Soft delete system** (trash/recycle bin) with audit trails
+- **23 strategic indexes** for optimal query performance
+- **Advanced SQL patterns**: CTEs, window functions, complex joins
+
+### Database Highlights
+- 9 core tables with comprehensive relationships
+- 20+ RLS policies for role-based access control
+- Helper functions for common operations
+- Materialized views for analytics
+- Full audit trail system
+
+### SQL Skills Demonstrated
+- Complex JOIN operations and aggregations
+- Window functions (RANK, LAG, PERCENT_RANK)
+- Common Table Expressions (CTEs)
+- Subqueries and derived tables
+- Index optimization strategies
+- Query performance tuning
+- Data validation and quality checks
+
+**📖 Full Documentation**: See [database/README.md](./database/README.md) for complete schema documentation, ER diagrams, and example queries.
+
+## 🔧 Scripts Disponíveis
+
+```bash
+# Desenvolvimento
+npm run dev
+
+# Build de produção
+npm run build
+
+# Iniciar produção
+npm start
+
+# Linting
+npm run lint
+```
+
+## 📋 Próximos Passos
+
+1. **Implementar autenticação** com Supabase Auth
+2. **Criar dashboard** para diferentes tipos de usuários
+3. **Desenvolver CRUD** de ocorrências
+4. **Implementar sistema de notificações**
+5. **Criar relatórios e analytics**
+6. **Adicionar testes unitários**
+
+## 🎯 Tipos de Usuários
+
+- **Admin** - Controle total do sistema
+- **Coordenador** - Gestão de ocorrências e relatórios
+- **Professor** - Registro de ocorrências dos alunos
+
+## 🔐 Segurança
+
+- Autenticação JWT via Supabase
+- Controle de acesso baseado em roles
+- Validação de dados no frontend e backend
+- Proteção contra ataques CSRF
+
+## 📱 Responsividade
+
+O sistema foi desenvolvido com design mobile-first, garantindo uma experiência otimizada em:
+- **Desktop** (1024px+)
+- **Tablet** (768px - 1023px)  
+- **Mobile** (até 767px)
+
+---
+
+Desenvolvido com ❤️ usando as melhores práticas de desenvolvimento web moderno.
