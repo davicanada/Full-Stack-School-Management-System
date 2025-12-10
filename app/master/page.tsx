@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from '@/lib/supabase/client';
+import { hashPassword } from '@/lib/auth/password';
 
 interface User {
   id: string;
@@ -309,12 +310,15 @@ export default function MasterPage() {
         console.log('Instituição criada:', newInstitution);
 
         // 2. Criar usuário admin
+        // Hash da senha padrão
+        const hashedPassword = await hashPassword('senha123');
+
         const { data: newAdminUser, error: userError } = await supabase
           .from('users')
           .insert({
             email: request.email,
             name: request.name,
-            password_hash: 'senha123',
+            password_hash: hashedPassword,
             role: 'admin',
             institution_id: newInstitution.id
           })
@@ -353,14 +357,17 @@ export default function MasterPage() {
 
       } else if (request.request_type === 'admin_existing') {
         console.log('🟡 PROCESSANDO APROVAÇÃO DE ADMIN_EXISTING - SEMPRE CRIANDO NOVO USUÁRIO');
-        
+
         // SIMPLIFICADO: Sempre criar novo usuário (1 email = 1 usuário)
+        // Hash da senha padrão
+        const hashedPassword = await hashPassword('senha123');
+
         const { data: newAdminUser, error: userError } = await supabase
           .from('users')
           .insert({
             email: request.email,
             name: request.name,
-            password_hash: 'senha123',
+            password_hash: hashedPassword,
             role: 'admin',
             institution_id: request.institution_id
           })
@@ -391,20 +398,23 @@ export default function MasterPage() {
 
       } else if (request.request_type === 'professor') {
         console.log('🟡 PROCESSANDO APROVAÇÃO DE PROFESSOR - SEMPRE CRIANDO NOVO USUÁRIO');
-        
+
         if (!request.institution_id) {
           throw new Error('Institution ID não encontrado na solicitação');
         }
-        
+
         // SIMPLIFICADO: Sempre criar novo usuário (1 email = 1 usuário)
         console.log('Criando usuário COM institution_id (sistema consistente)');
-        
+
+        // Hash da senha padrão
+        const hashedPassword = await hashPassword('senha123');
+
         const { data: newUser, error: userError } = await supabase
           .from('users')
           .insert({
             email: request.email,
             name: request.name,
-            password_hash: 'senha123',
+            password_hash: hashedPassword,
             role: 'professor',
             is_active: true,
             institution_id: request.institution_id  // ADICIONADO DE VOLTA para consistência

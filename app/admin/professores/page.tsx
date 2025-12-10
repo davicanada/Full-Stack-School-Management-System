@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { Usuario, Institution } from '@/types';
 import toast, { Toaster } from 'react-hot-toast';
+import { hashPassword } from '@/lib/auth/password';
 
 interface Teacher {
   id: string;
@@ -374,7 +375,10 @@ export default function ProfessoresPage() {
       // SIMPLIFICADO: Sempre criar novo usuário (1 email = 1 usuário)
       console.log('🆕 Criando novo usuário professor para email:', fullRequest.email);
       console.log('Criando usuário COM institution_id (sistema consistente)');
-      
+
+      // Hash da senha padrão
+      const hashedPassword = await hashPassword('senha123');
+
       const { data: newUser, error: userError } = await supabase
         .from('users')
         .insert([
@@ -382,7 +386,7 @@ export default function ProfessoresPage() {
             name: fullRequest.name,
             email: fullRequest.email,
             role: 'professor',
-            password_hash: 'senha123',
+            password_hash: hashedPassword,
             is_active: true,
             institution_id: fullRequest.institution_id  // ADICIONADO DE VOLTA para consistência
           }
