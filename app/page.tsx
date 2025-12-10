@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { Institution, AdminAccessRequest, TeacherAccessRequest, User } from '@/types';
 import { supabase } from '@/lib/supabase/client';
+import { verifyPassword, isBcryptHash } from '@/lib/auth/password';
 
 export default function Home() {
   // States to control different modals
@@ -93,8 +94,20 @@ export default function Home() {
         return;
       }
 
-      // Verificar senha (temporariamente sem hash)
-      if (user.password_hash !== password) {
+      // Verificar senha
+      // Suporte para senhas antigas (plain text) e novas (bcrypt hash)
+      let passwordValid = false;
+
+      if (isBcryptHash(user.password_hash)) {
+        // Nova senha com hash - verificar usando bcrypt
+        passwordValid = await verifyPassword(password, user.password_hash);
+      } else {
+        // Senha antiga em texto plano - comparação direta (DEPRECATED)
+        // TODO: Remover após migração completa das senhas
+        passwordValid = user.password_hash === password;
+      }
+
+      if (!passwordValid) {
         toast.error('Email ou senha incorretos');
         setLoading(false);
         return;
