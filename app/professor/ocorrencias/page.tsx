@@ -37,14 +37,14 @@ export default function MinhasOcorrenciasPage() {
   const [occurrenceTypes, setOccurrenceTypes] = useState<OccurrenceType[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // States para filtros
+  // States for filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
   
-  // States para paginação
+  // States for paginação
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -58,20 +58,20 @@ export default function MinhasOcorrenciasPage() {
           return;
         }
 
-        const userDate = JSON.parse(storedUser);
+        const userData = JSON.parse(storedUser);
         
-        if (!userDate || userDate.role !== 'professor') {
+        if (!userData || userData.role !== 'professor') {
           toast.error('Acesso negado. Apenas professores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userDate);
-        await loadOccurrences(userDate);
-        await loadFiltersDate(userDate);
+        setUser(userData);
+        await loadOccurrences(userData);
+        await loadFiltersData(userData);
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Error verificar autenticação');
+        toast.error('Erro ao verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -81,7 +81,7 @@ export default function MinhasOcorrenciasPage() {
     checkAuth();
   }, [router]);
 
-  const loadOccurrences = async (userDate: Usuario) => {
+  const loadOccurrences = async (userData: Usuario) => {
     try {
       const { data, error } = await supabase
         .from('occurrences')
@@ -91,52 +91,52 @@ export default function MinhasOcorrenciasPage() {
           classes(name),
           occurrence_types(name, severity)
         `)
-        .eq('teacher_id', userDate.id)
+        .eq('teacher_id', userData.id)
         .order('occurred_at', { ascending: false });
 
       if (error) {
-        console.error('Error carregar ocorrências:', error);
-        toast.error('Error carregar ocorrências');
+        console.error('Erro ao carregar ocorrências:', error);
+        toast.error('Erro ao carregar ocorrências');
         return;
       }
 
       setOccurrences(data || []);
     } catch (error) {
-      console.error('Error carregar ocorrências:', error);
-      toast.error('Error carregar ocorrências');
+      console.error('Erro ao carregar ocorrências:', error);
+      toast.error('Erro ao carregar ocorrências');
     }
   };
 
-  const loadFiltersDate = async (userDate: Usuario) => {
+  const loadFiltersData = async (userData: Usuario) => {
     try {
-      // Search turmas onde o professor tem ocorrências
-      const { data: classesDate, error: classesError } = await supabase
+      // Buscar turmas onde o professor tem ocorrências
+      const { data: classesData, error: classesError } = await supabase
         .from('classes')
         .select('id, name')
-        .eq('institution_id', userDate.institution_id)
+        .eq('institution_id', userData.institution_id)
         .order('name');
 
-      if (!classesError && classesDate) {
-        setClasses(classesDate);
+      if (!classesError && classesData) {
+        setClasses(classesData);
       }
 
-      // Search tipos de ocorrência
-      const { data: typesDate, error: typesError } = await supabase
+      // Buscar tipos de ocorrência
+      const { data: typesData, error: typesError } = await supabase
         .from('occurrence_types')
         .select('*')
-        .eq('institution_id', userDate.institution_id)
+        .eq('institution_id', userData.institution_id)
         .order('name');
 
-      if (!typesError && typesDate) {
-        setOccurrenceTypes(typesDate);
+      if (!typesError && typesData) {
+        setOccurrenceTypes(typesData);
       }
     } catch (error) {
-      console.error('Error carregar dados dos filtros:', error);
+      console.error('Erro ao carregar dados dos filtros:', error);
     }
   };
 
   const handleDeleteOccurrence = async (occurrenceId: string, studentName: string) => {
-    const confirmed = window.confirm(`Are you sure you want to excluir a ocorrência do aluno ${studentName}?`);
+    const confirmed = window.confirm(`Tem certeza que deseja excluir a ocorrência do aluno ${studentName}?`);
     
     if (!confirmed) return;
 
@@ -148,16 +148,16 @@ export default function MinhasOcorrenciasPage() {
         .eq('teacher_id', user?.id); // Segurança: só pode deletar suas próprias ocorrências
 
       if (error) {
-        console.error('Error excluir ocorrência:', error);
-        toast.error('Error excluir ocorrência');
+        console.error('Erro ao excluir ocorrência:', error);
+        toast.error('Erro ao excluir ocorrência');
         return;
       }
 
-      toast.success('Occurrence excluída com sucesso!');
+      toast.success('Ocorrência excluída com sucesso!');
       if (user) await loadOccurrences(user);
     } catch (error) {
-      console.error('Error excluir ocorrência:', error);
-      toast.error('Error excluir ocorrência');
+      console.error('Erro ao excluir ocorrência:', error);
+      toast.error('Erro ao excluir ocorrência');
     }
   };
 
@@ -185,7 +185,7 @@ export default function MinhasOcorrenciasPage() {
     }
   };
 
-  // Filter ocorrências
+  // Filtrar ocorrências
   const filteredOccurrences = occurrences.filter(occurrence => {
     const matchesSearch = occurrence.students?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          occurrence.classes?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,7 +225,7 @@ export default function MinhasOcorrenciasPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-orange-600 font-medium">Loading ocorrências...</p>
+          <p className="text-orange-600 font-medium">Carregando ocorrências...</p>
         </div>
       </div>
     );
@@ -241,21 +241,21 @@ export default function MinhasOcorrenciasPage() {
               <button
                 onClick={() => router.push('/professor')}
                 className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Back"
+                title="Voltar"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
               <h1 className="text-xl font-bold text-orange-600">
-                📋 Minhas Occurrences
+                📋 Minhas Ocorrências
               </h1>
             </div>
             
             <div className="flex items-center space-x-3">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                <p className="text-xs text-orange-600">Teacher</p>
+                <p className="text-xs text-orange-600">Professor</p>
               </div>
             </div>
           </div>
@@ -270,11 +270,11 @@ export default function MinhasOcorrenciasPage() {
             {/* Busca */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search
+                Buscar
               </label>
               <input
                 type="text"
-                placeholder="Name do aluno, turma ou tipo..."
+                placeholder="Nome do aluno, turma ou tipo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
@@ -284,7 +284,7 @@ export default function MinhasOcorrenciasPage() {
             {/* Filtro por turma */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Class
+                Turma
               </label>
               <select
                 value={classFilter}
@@ -301,7 +301,7 @@ export default function MinhasOcorrenciasPage() {
             {/* Filtro por tipo */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Type
+                Tipo
               </label>
               <select
                 value={typeFilter}
@@ -335,7 +335,7 @@ export default function MinhasOcorrenciasPage() {
             {/* Filtro por data */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date
+                Data
               </label>
               <input
                 type="date"
@@ -359,7 +359,7 @@ export default function MinhasOcorrenciasPage() {
           </div>
         </div>
 
-        {/* Lista de Occurrences */}
+        {/* Lista de Ocorrências */}
         {filteredOccurrences.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
             <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -381,22 +381,22 @@ export default function MinhasOcorrenciasPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date/Hora
+                      Data/Hora
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student
+                      Aluno
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Class
+                      Turma
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
+                      Tipo
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Description
+                      Descrição
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
+                      Ações
                     </th>
                   </tr>
                 </thead>
@@ -431,7 +431,7 @@ export default function MinhasOcorrenciasPage() {
                         <button
                           onClick={() => handleDeleteOccurrence(occurrence.id, occurrence.students?.name || '')}
                           className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete ocorrência"
+                          title="Excluir ocorrência"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

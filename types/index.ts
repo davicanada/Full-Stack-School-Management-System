@@ -1,11 +1,11 @@
-// Types for the school management system
+// Types for the system de gestão de ocorrências escolares
 
 export interface User {
   id: string;
   name: string;
   email: string;
   is_active?: boolean;
-  // role and institution_id were removed from the database - now they come from user_institutions
+  // role and institution_id were removed from database - agora vêm de user_institutions
   created_at?: string;
   // Trash system fields
   deleted_at?: string | null;
@@ -17,7 +17,7 @@ export interface Usuario {
   email: string;
   name: string;
   nome?: string; // For compatibility
-  // Fields below come from user_institutions, not from users table
+  // Fields below come from user_institutions, não da tabela users
   role: 'master' | 'admin' | 'professor';
   tipo?: 'admin' | 'professor' | 'coordenador'; // For compatibility
   institution_id?: string;

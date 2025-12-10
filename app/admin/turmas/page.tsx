@@ -58,7 +58,7 @@ const SHIFTS = [
   { value: 'integral', label: 'Integral', icon: '🌞' }
 ];
 
-interface WizardFormDate {
+interface WizardFormData {
   education_level: string;
   grade: string;
   custom_grade: string;
@@ -68,7 +68,7 @@ interface WizardFormDate {
   is_active: boolean;
 }
 
-export default function ClasssPage() {
+export default function TurmasPage() {
   const router = useRouter();
   const [user, setUser] = useState<Usuario | null>(null);
   const [institution, setInstitution] = useState<Institution | null>(null);
@@ -97,7 +97,7 @@ export default function ClasssPage() {
   const [selectedClassesToImport, setSelectedClassesToImport] = useState<string[]>([]);
   const [importingClasses, setImportingClasses] = useState(false);
 
-  const [wizardFormDate, setWizardFormDate] = useState<WizardFormDate>({
+  const [wizardFormData, setWizardFormData] = useState<WizardFormData>({
     education_level: '',
     grade: '',
     custom_grade: '',
@@ -119,17 +119,17 @@ export default function ClasssPage() {
         query = query.eq('academic_year', year);
       }
 
-      const { data: classesDate, error } = await query.order('academic_year', { ascending: false }).order('name');
+      const { data: classesData, error } = await query.order('academic_year', { ascending: false }).order('name');
 
       if (error) {
-        console.error('Error buscar turmas:', error);
-        toast.error('Error carregar turmas');
+        console.error('Erro ao buscar turmas:', error);
+        toast.error('Erro ao carregar turmas');
         return;
       }
 
-      // Search quantidade de alunos para cada turma
+      // Buscar quantidade de alunos para cada turma
       const classesWithStudentCount = await Promise.all(
-        (classesDate || []).map(async (classItem) => {
+        (classesData || []).map(async (classItem) => {
           const { count } = await supabase
             .from('students')
             .select('*', { count: 'exact', head: true })
@@ -149,8 +149,8 @@ export default function ClasssPage() {
       const years = Array.from(new Set(classesWithStudentCount.map(c => c.academic_year))).sort((a, b) => b - a);
       setAvailableYears(years);
     } catch (error) {
-      console.error('Error buscar turmas:', error);
-      toast.error('Error carregar turmas');
+      console.error('Erro ao buscar turmas:', error);
+      toast.error('Erro ao carregar turmas');
     }
   };
 
@@ -165,7 +165,7 @@ export default function ClasssPage() {
 
       if (error) throw error;
 
-      // Search quantidade de alunos
+      // Buscar quantidade de alunos
       const classesWithCount = await Promise.all(
         (data || []).map(async (classItem) => {
           const { count } = await supabase
@@ -183,8 +183,8 @@ export default function ClasssPage() {
 
       setTrashedClasses(classesWithCount);
     } catch (error) {
-      console.error('Error buscar lixeira:', error);
-      toast.error('Error carregar lixeira');
+      console.error('Erro ao buscar lixeira:', error);
+      toast.error('Erro ao carregar lixeira');
     }
   };
 
@@ -198,33 +198,33 @@ export default function ClasssPage() {
           return;
         }
 
-        const userDate = JSON.parse(storedUser);
+        const userData = JSON.parse(storedUser);
 
-        if (!userDate || userDate.role !== 'admin') {
+        if (!userData || userData.role !== 'admin') {
           toast.error('Acesso negado. Apenas administradores podem acessar esta página.');
           router.push('/');
           return;
         }
 
-        setUser(userDate);
+        setUser(userData);
 
-        const { data: institutionDate, error: institutionError } = await supabase
+        const { data: institutionData, error: institutionError } = await supabase
           .from('institutions')
           .select('*')
-          .eq('id', userDate.institution_id)
+          .eq('id', userData.institution_id)
           .single();
 
         if (institutionError) {
-          toast.error('Error carregar dados da instituição');
+          toast.error('Erro ao carregar dados da instituição');
         } else {
-          setInstitution(institutionDate);
+          setInstitution(institutionData);
         }
 
-        await fetchClasses(userDate.institution_id);
-        await fetchTrashedClasses(userDate.institution_id);
+        await fetchClasses(userData.institution_id);
+        await fetchTrashedClasses(userData.institution_id);
       } catch (error) {
         console.error('Erro na autenticação:', error);
-        toast.error('Error verificar autenticação');
+        toast.error('Erro ao verificar autenticação');
         router.push('/');
       } finally {
         setLoading(false);
@@ -234,7 +234,7 @@ export default function ClasssPage() {
     checkAuth();
   }, [router]);
 
-  // Update quando mudar o filtro de ano
+  // Atualizar quando mudar o filtro de ano
   useEffect(() => {
     if (user?.institution_id) {
       fetchClasses(user.institution_id, selectedYear);
@@ -253,23 +253,23 @@ export default function ClasssPage() {
   const canProceedToNextStep = (): boolean => {
     switch (wizardStep) {
       case 1:
-        return wizardFormDate.education_level !== '';
+        return wizardFormData.education_level !== '';
       case 2:
-        if (wizardFormDate.education_level === 'custom') {
-          return wizardFormDate.custom_grade.trim() !== '';
+        if (wizardFormData.education_level === 'custom') {
+          return wizardFormData.custom_grade.trim() !== '';
         }
-        return wizardFormDate.grade !== '';
+        return wizardFormData.grade !== '';
       case 3:
-        return wizardFormDate.class_code.trim() !== '';
+        return wizardFormData.class_code.trim() !== '';
       case 4:
-        return wizardFormDate.shift !== '';
+        return wizardFormData.shift !== '';
       default:
         return true;
     }
   };
 
   const resetWizard = () => {
-    setWizardFormDate({
+    setWizardFormData({
       education_level: '',
       grade: '',
       custom_grade: '',
@@ -316,7 +316,7 @@ export default function ClasssPage() {
 
       return (data && data.length > 0);
     } catch (error) {
-      console.error('Error verificar duplicata:', error);
+      console.error('Erro ao verificar duplicata:', error);
       return false;
     }
   };
@@ -328,51 +328,51 @@ export default function ClasssPage() {
       // Construir nome da turma
       let fullClassName = '';
 
-      if (wizardFormDate.education_level === 'custom') {
-        fullClassName = `${wizardFormDate.custom_grade} ${wizardFormDate.class_code}`;
+      if (wizardFormData.education_level === 'custom') {
+        fullClassName = `${wizardFormData.custom_grade} ${wizardFormData.class_code}`;
       } else {
-        const grade = wizardFormDate.grade;
-        fullClassName = `${grade} ${wizardFormDate.class_code}`;
+        const grade = wizardFormData.grade;
+        fullClassName = `${grade} ${wizardFormData.class_code}`;
       }
 
       // Verificar duplicata
       const isDuplicate = await checkDuplicate(
         fullClassName,
-        wizardFormDate.academic_year,
+        wizardFormData.academic_year,
         editingClass?.id
       );
 
       if (isDuplicate) {
-        toast.error(`Já existe uma turma "${fullClassName}" para o ano ${wizardFormDate.academic_year}`);
+        toast.error(`Já existe uma turma "${fullClassName}" para o ano ${wizardFormData.academic_year}`);
         return;
       }
 
-      const classDate = {
+      const classData = {
         name: fullClassName.trim(),
-        education_level: wizardFormDate.education_level,
-        grade: wizardFormDate.education_level === 'custom' ? wizardFormDate.custom_grade : wizardFormDate.grade,
-        shift: wizardFormDate.shift,
-        academic_year: wizardFormDate.academic_year,
-        is_active: wizardFormDate.is_active,
+        education_level: wizardFormData.education_level,
+        grade: wizardFormData.education_level === 'custom' ? wizardFormData.custom_grade : wizardFormData.grade,
+        shift: wizardFormData.shift,
+        academic_year: wizardFormData.academic_year,
+        is_active: wizardFormData.is_active,
         institution_id: user.institution_id,
       };
 
       if (editingClass) {
         const { error } = await supabase
           .from('classes')
-          .update(classDate)
+          .update(classData)
           .eq('id', editingClass.id);
 
         if (error) throw error;
-        toast.success('Class atualizada com sucesso!');
+        toast.success('Turma atualizada com sucesso!');
       } else {
         const { error } = await supabase
           .from('classes')
-          .insert(classDate);
+          .insert(classData);
 
         if (error) throw error;
 
-        toast.success(`Class ${fullClassName} criada com sucesso!`);
+        toast.success(`Turma ${fullClassName} criada com sucesso!`);
       }
 
       if (saveAndExit || wizardStep === 5) {
@@ -381,8 +381,8 @@ export default function ClasssPage() {
 
       await fetchClasses(user.institution_id, selectedYear);
     } catch (error) {
-      console.error('Error salvar turma:', error);
-      toast.error('Error salvar turma');
+      console.error('Erro ao salvar turma:', error);
+      toast.error('Erro ao salvar turma');
     }
   };
 
@@ -391,7 +391,7 @@ export default function ClasssPage() {
     setDuplicatingClass(null);
 
     // Preencher wizard com dados da turma
-    setWizardFormDate({
+    setWizardFormData({
       education_level: classItem.education_level || 'custom',
       grade: classItem.grade || '',
       custom_grade: classItem.education_level === 'custom' ? classItem.grade || '' : '',
@@ -410,7 +410,7 @@ export default function ClasssPage() {
     setEditingClass(null);
 
     // Preencher wizard com dados da turma (mas sem o ID, para criar uma nova)
-    setWizardFormDate({
+    setWizardFormData({
       education_level: classItem.education_level || 'custom',
       grade: classItem.grade || '',
       custom_grade: classItem.education_level === 'custom' ? classItem.grade || '' : '',
@@ -428,7 +428,7 @@ export default function ClasssPage() {
     if (!user) return;
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to mover a turma "${classItem.name}" para a lixeira?\n\nA turma será desativada automaticamente.`
+      `Tem certeza que deseja mover a turma "${classItem.name}" para a lixeira?\n\nA turma será desativada automaticamente.`
     );
 
     if (!confirmDelete) return;
@@ -445,12 +445,12 @@ export default function ClasssPage() {
 
       if (error) throw error;
 
-      toast.success('Class movida para lixeira e desativada!');
+      toast.success('Turma movida para lixeira e desativada!');
       await fetchClasses(user.institution_id!, selectedYear);
       await fetchTrashedClasses(user.institution_id!);
     } catch (error) {
-      console.error('Error mover turma para lixeira:', error);
-      toast.error('Error mover turma para lixeira');
+      console.error('Erro ao mover turma para lixeira:', error);
+      toast.error('Erro ao mover turma para lixeira');
     }
   };
 
@@ -469,12 +469,12 @@ export default function ClasssPage() {
 
       if (error) throw error;
 
-      toast.success('Class restaurada e reativada com sucesso!');
+      toast.success('Turma restaurada e reativada com sucesso!');
       await fetchClasses(user.institution_id!, selectedYear);
       await fetchTrashedClasses(user.institution_id!);
     } catch (error) {
-      console.error('Error restaurar turma:', error);
-      toast.error('Error restaurar turma');
+      console.error('Erro ao restaurar turma:', error);
+      toast.error('Erro ao restaurar turma');
     }
   };
 
@@ -482,7 +482,7 @@ export default function ClasssPage() {
     if (!user) return;
 
     const confirmDelete = window.confirm(
-      `ATENÇÃO: Are you sure you want to EXCLUIR PERMANENTEMENTE a turma "${classItem.name}"?\n\n` +
+      `ATENÇÃO: Tem certeza que deseja EXCLUIR PERMANENTEMENTE a turma "${classItem.name}"?\n\n` +
       `Esta ação NÃO PODE SER DESFEITA e todos os dados relacionados serão perdidos.`
     );
 
@@ -499,7 +499,7 @@ export default function ClasssPage() {
       if (studentsError) throw studentsError;
 
       if (students && students.length > 0) {
-        toast.error(`No é possível excluir. Existem ${students.length} aluno(s) nesta turma.`);
+        toast.error(`Não é possível excluir. Existem ${students.length} aluno(s) nesta turma.`);
         return;
       }
 
@@ -512,7 +512,7 @@ export default function ClasssPage() {
       if (occurrencesError) throw occurrencesError;
 
       if (occurrences && occurrences.length > 0) {
-        toast.error(`No é possível excluir. Existem ${occurrences.length} ocorrência(s) registrada(s) nesta turma.`);
+        toast.error(`Não é possível excluir. Existem ${occurrences.length} ocorrência(s) registrada(s) nesta turma.`);
         return;
       }
 
@@ -523,11 +523,11 @@ export default function ClasssPage() {
 
       if (error) throw error;
 
-      toast.success('Class excluída permanentemente!');
+      toast.success('Turma excluída permanentemente!');
       await fetchTrashedClasses(user.institution_id!);
     } catch (error) {
-      console.error('Error excluir turma permanentemente:', error);
-      toast.error('Error excluir turma');
+      console.error('Erro ao excluir turma permanentemente:', error);
+      toast.error('Erro ao excluir turma');
     }
   };
 
@@ -550,7 +550,7 @@ export default function ClasssPage() {
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast.error(`No existem turmas cadastradas para o ano ${previousYear}`);
+        toast.error(`Não existem turmas cadastradas para o ano ${previousYear}`);
         return;
       }
 
@@ -570,8 +570,8 @@ export default function ClasssPage() {
       setSelectedClassesToImport([]);
       setShowImportModal(true);
     } catch (error) {
-      console.error('Error buscar turmas do ano anterior:', error);
-      toast.error('Error buscar turmas para importação');
+      console.error('Erro ao buscar turmas do ano anterior:', error);
+      toast.error('Erro ao buscar turmas para importação');
     }
   };
 
@@ -621,8 +621,8 @@ export default function ClasssPage() {
       setSelectedClassesToImport([]);
       await fetchClasses(user.institution_id, selectedYear);
     } catch (error) {
-      console.error('Error importar turmas:', error);
-      toast.error('Error importar turmas');
+      console.error('Erro ao importar turmas:', error);
+      toast.error('Erro ao importar turmas');
     } finally {
       setImportingClasses(false);
     }
@@ -639,16 +639,16 @@ export default function ClasssPage() {
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
         const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonDate = XLSX.utils.sheet_to_json(worksheet) as any[];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
 
-        if (jsonDate.length === 0) {
+        if (jsonData.length === 0) {
           toast.error('Planilha vazia');
           return;
         }
 
         // Validar estrutura
         const requiredFields = ['nivel_ensino', 'serie_ano', 'turma', 'turno', 'ano_letivo'];
-        const firstRow = jsonDate[0];
+        const firstRow = jsonData[0];
         const hasAllFields = requiredFields.every(field => field in firstRow);
 
         if (!hasAllFields) {
@@ -657,7 +657,7 @@ export default function ClasssPage() {
         }
 
         // Processar dados
-        const classesToInsert = jsonDate.map(row => {
+        const classesToInsert = jsonData.map(row => {
           const fullName = `${row.serie_ano} ${row.turma}`.trim();
 
           return {
@@ -689,8 +689,8 @@ export default function ClasssPage() {
         setShowBulkImportModal(false);
         await fetchClasses(user.institution_id, selectedYear);
       } catch (error) {
-        console.error('Error processar planilha:', error);
-        toast.error('Error processar planilha Excel');
+        console.error('Erro ao processar planilha:', error);
+        toast.error('Erro ao processar planilha Excel');
       }
     };
 
@@ -725,7 +725,7 @@ export default function ClasssPage() {
 
     const ws = XLSX.utils.json_to_sheet(template);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Classs');
+    XLSX.utils.book_append_sheet(wb, ws, 'Turmas');
     XLSX.writeFile(wb, 'modelo_importacao_turmas.xlsx');
     toast.success('Modelo baixado com sucesso!');
   };
@@ -735,7 +735,7 @@ export default function ClasssPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
     );
@@ -746,8 +746,8 @@ export default function ClasssPage() {
   }
 
   const getShiftLabel = (shift: string) => {
-    const shiftDate = SHIFTS.find(s => s.value === shift);
-    return shiftDate ? `${shiftDate.icon} ${shiftDate.label}` : shift;
+    const shiftData = SHIFTS.find(s => s.value === shift);
+    return shiftData ? `${shiftData.icon} ${shiftData.label}` : shift;
   };
 
   return (
@@ -764,10 +764,10 @@ export default function ClasssPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Back
+                Voltar
               </button>
               <div>
-                <h1 className="text-2xl font-bold">Gerenciar Classs</h1>
+                <h1 className="text-2xl font-bold">Gerenciar Turmas</h1>
                 <p className="text-blue-100">{institution.nome}</p>
               </div>
             </div>
@@ -783,7 +783,7 @@ export default function ClasssPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                {showTrash ? 'Ver Classs Actives' : `Trash (${trashedClasses.length})`}
+                {showTrash ? 'Ver Turmas Ativas' : `Lixeira (${trashedClasses.length})`}
               </button>
               {!showTrash && (
                 <>
@@ -812,7 +812,7 @@ export default function ClasssPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
-                    New Class
+                    Nova Turma
                   </button>
                 </>
               )}
@@ -832,7 +832,7 @@ export default function ClasssPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
                 <span className="text-sm text-red-800">
-                  <strong>Trash:</strong> Classs aqui podem ser restauradas ou excluídas permanentemente
+                  <strong>Lixeira:</strong> Turmas aqui podem ser restauradas ou excluídas permanentemente
                 </span>
               </div>
             </div>
@@ -844,7 +844,7 @@ export default function ClasssPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Trash vazia</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Lixeira vazia</h3>
                 <p className="text-gray-500">Nenhuma turma na lixeira</p>
               </div>
             ) : (
@@ -887,7 +887,7 @@ export default function ClasssPage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                         </svg>
-                        Restore
+                        Restaurar
                       </button>
                       <button
                         onClick={() => handlePermanentDelete(classItem)}
@@ -910,7 +910,7 @@ export default function ClasssPage() {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <label className="text-sm font-medium text-gray-700">Filter por Ano Letivo:</label>
+                  <label className="text-sm font-medium text-gray-700">Filtrar por Ano Letivo:</label>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(parseInt(e.target.value))}
@@ -946,7 +946,7 @@ export default function ClasssPage() {
                     onClick={openWizard}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
                   >
-                    Create New Class
+                    Criar Nova Turma
                   </button>
                   <button
                     onClick={handleOpenImportModal}
@@ -998,7 +998,7 @@ export default function ClasssPage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        Ver Students ({classItem.student_count})
+                        Ver Alunos ({classItem.student_count})
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2 mb-2">
@@ -1009,7 +1009,7 @@ export default function ClasssPage() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        Edit
+                        Editar
                       </button>
                       <button
                         onClick={() => handleDuplicate(classItem)}
@@ -1029,7 +1029,7 @@ export default function ClasssPage() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      Mover para Trash
+                      Mover para Lixeira
                     </button>
                   </div>
                 ))}
@@ -1043,8 +1043,8 @@ export default function ClasssPage() {
       {showWizard && (
         <WizardModal
           step={wizardStep}
-          formDate={wizardFormDate}
-          setFormDate={setWizardFormDate}
+          formData={wizardFormData}
+          setFormData={setWizardFormData}
           onNext={nextStep}
           onPrev={prevStep}
           onClose={closeWizard}
@@ -1062,7 +1062,7 @@ export default function ClasssPage() {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
-                Importar Classs de {selectedYear - 1} para {selectedYear}
+                Importar Turmas de {selectedYear - 1} para {selectedYear}
               </h3>
               <button
                 onClick={() => setShowImportModal(false)}
@@ -1074,7 +1074,7 @@ export default function ClasssPage() {
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Select as turmas que deseja copiar. Apenas a estrutura será copiada (sem alunos).
+              Selecione as turmas que deseja copiar. Apenas a estrutura será copiada (sem alunos).
             </p>
             <div className="space-y-2 mb-6">
               {previousYearClasses.map((cls) => (
@@ -1108,7 +1108,7 @@ export default function ClasssPage() {
                 onClick={() => setShowImportModal(false)}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 onClick={handleImportClasses}
@@ -1193,7 +1193,7 @@ export default function ClasssPage() {
                 onClick={() => setShowBulkImportModal(false)}
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition-colors duration-200"
               >
-                Close
+                Fechar
               </button>
             </div>
           </div>
@@ -1208,8 +1208,8 @@ export default function ClasssPage() {
 // Wizard Component - ATUALIZADO
 interface WizardModalProps {
   step: number;
-  formDate: WizardFormDate;
-  setFormDate: (data: WizardFormDate) => void;
+  formData: WizardFormData;
+  setFormData: (data: WizardFormData) => void;
   onNext: () => void;
   onPrev: () => void;
   onClose: () => void;
@@ -1222,8 +1222,8 @@ interface WizardModalProps {
 
 function WizardModal({
   step,
-  formDate,
-  setFormDate,
+  formData,
+  setFormData,
   onNext,
   onPrev,
   onClose,
@@ -1236,9 +1236,9 @@ function WizardModal({
   const steps = [
     { number: 1, label: 'Nível de Ensino' },
     { number: 2, label: 'Série/Ano' },
-    { number: 3, label: 'Class' },
+    { number: 3, label: 'Turma' },
     { number: 4, label: 'Turno' },
-    { number: 5, label: 'Confirm' }
+    { number: 5, label: 'Confirmar' }
   ];
 
   return (
@@ -1248,7 +1248,7 @@ function WizardModal({
         <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-t-lg flex-shrink-0">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-2xl font-bold">
-              {isDuplicating ? 'Duplicar Class' : isEditing ? 'Edit Class' : 'Create New Class'}
+              {isDuplicating ? 'Duplicar Turma' : isEditing ? 'Editar Turma' : 'Criar Nova Turma'}
             </h3>
             <button
               onClick={onClose}
@@ -1289,15 +1289,15 @@ function WizardModal({
           {/* Step 1: Nível de Ensino */}
           {step === 1 && (
             <div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Select o Nível de Ensino</h4>
-              <p className="text-gray-600 mb-6">Choose o nível de ensino da turma</p>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">Selecione o Nível de Ensino</h4>
+              <p className="text-gray-600 mb-6">Escolha o nível de ensino da turma</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(EDUCATION_LEVELS).map(([key, value]) => (
                   <button
                     key={key}
-                    onClick={() => setFormDate({ ...formDate, education_level: key, grade: '', custom_grade: '' })}
+                    onClick={() => setFormData({ ...formData, education_level: key, grade: '', custom_grade: '' })}
                     className={`p-4 border-2 rounded-lg transition-all text-left ${
-                      formDate.education_level === key
+                      formData.education_level === key
                         ? 'border-orange-600 bg-orange-50'
                         : 'border-gray-200 hover:border-orange-300'
                     }`}
@@ -1313,33 +1313,33 @@ function WizardModal({
           {/* Step 2: Série/Ano */}
           {step === 2 && (
             <div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Select a Série/Ano</h4>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">Selecione a Série/Ano</h4>
               <p className="text-gray-600 mb-6">
-                {formDate.education_level && EDUCATION_LEVELS[formDate.education_level as keyof typeof EDUCATION_LEVELS]?.label}
+                {formData.education_level && EDUCATION_LEVELS[formData.education_level as keyof typeof EDUCATION_LEVELS]?.label}
               </p>
 
-              {formDate.education_level === 'custom' ? (
+              {formData.education_level === 'custom' ? (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Digite o nome da série/ano
                   </label>
                   <input
                     type="text"
-                    value={formDate.custom_grade}
-                    onChange={(e) => setFormDate({ ...formDate, custom_grade: e.target.value })}
+                    value={formData.custom_grade}
+                    onChange={(e) => setFormData({ ...formData, custom_grade: e.target.value })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Ex: Maternal III, Pré II, etc."
                   />
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {formDate.education_level &&
-                    EDUCATION_LEVELS[formDate.education_level as keyof typeof EDUCATION_LEVELS]?.grades.map((grade) => (
+                  {formData.education_level &&
+                    EDUCATION_LEVELS[formData.education_level as keyof typeof EDUCATION_LEVELS]?.grades.map((grade) => (
                       <button
                         key={grade}
-                        onClick={() => setFormDate({ ...formDate, grade })}
+                        onClick={() => setFormData({ ...formData, grade })}
                         className={`p-4 border-2 rounded-lg font-semibold transition-all ${
-                          formDate.grade === grade
+                          formData.grade === grade
                             ? 'border-orange-600 bg-orange-50 text-orange-900'
                             : 'border-gray-200 hover:border-orange-300'
                         }`}
@@ -1352,27 +1352,27 @@ function WizardModal({
             </div>
           )}
 
-          {/* Step 3: Name/Código da Class */}
+          {/* Step 3: Nome/Código da Turma */}
           {step === 3 && (
             <div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Definição da Class</h4>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">Definição da Turma</h4>
               <p className="text-gray-600 mb-6">Informe o código ou nome da turma e o ano letivo</p>
 
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Código da Class *
+                    Código da Turma *
                   </label>
                   <input
                     type="text"
-                    value={formDate.class_code}
-                    onChange={(e) => setFormDate({ ...formDate, class_code: e.target.value.toUpperCase() })}
+                    value={formData.class_code}
+                    onChange={(e) => setFormData({ ...formData, class_code: e.target.value.toUpperCase() })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     placeholder="Ex: A, B, C, 101, etc."
                     maxLength={10}
                   />
                   <p className="text-sm text-gray-500 mt-1">
-                    Name completo: {formDate.education_level === 'custom' ? formDate.custom_grade : formDate.grade} {formDate.class_code}
+                    Nome completo: {formData.education_level === 'custom' ? formData.custom_grade : formData.grade} {formData.class_code}
                   </p>
                 </div>
 
@@ -1382,8 +1382,8 @@ function WizardModal({
                   </label>
                   <input
                     type="number"
-                    value={formDate.academic_year}
-                    onChange={(e) => setFormDate({ ...formDate, academic_year: parseInt(e.target.value) })}
+                    value={formData.academic_year}
+                    onChange={(e) => setFormData({ ...formData, academic_year: parseInt(e.target.value) })}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                     min="2020"
                     max="2030"
@@ -1394,12 +1394,12 @@ function WizardModal({
                   <input
                     type="checkbox"
                     id="is_active_wizard"
-                    checked={formDate.is_active}
-                    onChange={(e) => setFormDate({ ...formDate, is_active: e.target.checked })}
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                     className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
                   />
                   <label htmlFor="is_active_wizard" className="ml-2 text-sm text-gray-700">
-                    Class ativa
+                    Turma ativa
                   </label>
                 </div>
               </div>
@@ -1409,16 +1409,16 @@ function WizardModal({
           {/* Step 4: Turno */}
           {step === 4 && (
             <div>
-              <h4 className="text-xl font-bold text-gray-900 mb-2">Select o Turno</h4>
-              <p className="text-gray-600 mb-6">Choose o período em que a turma funcionará</p>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">Selecione o Turno</h4>
+              <p className="text-gray-600 mb-6">Escolha o período em que a turma funcionará</p>
 
               <div className="grid grid-cols-2 gap-4">
                 {SHIFTS.map((shift) => (
                   <button
                     key={shift.value}
-                    onClick={() => setFormDate({ ...formDate, shift: shift.value })}
+                    onClick={() => setFormData({ ...formData, shift: shift.value })}
                     className={`p-6 border-2 rounded-lg transition-all ${
-                      formDate.shift === shift.value
+                      formData.shift === shift.value
                         ? 'border-orange-600 bg-orange-50'
                         : 'border-gray-200 hover:border-orange-300'
                     }`}
@@ -1441,40 +1441,40 @@ function WizardModal({
                 <div>
                   <p className="text-sm text-gray-600">Nível de Ensino</p>
                   <p className="font-semibold text-gray-900">
-                    {EDUCATION_LEVELS[formDate.education_level as keyof typeof EDUCATION_LEVELS]?.label}
+                    {EDUCATION_LEVELS[formData.education_level as keyof typeof EDUCATION_LEVELS]?.label}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Série/Ano</p>
                   <p className="font-semibold text-gray-900">
-                    {formDate.education_level === 'custom' ? formDate.custom_grade : formDate.grade}
+                    {formData.education_level === 'custom' ? formData.custom_grade : formData.grade}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-sm text-gray-600">Name Completo da Class</p>
+                  <p className="text-sm text-gray-600">Nome Completo da Turma</p>
                   <p className="font-semibold text-gray-900 text-lg">
-                    {formDate.education_level === 'custom' ? formDate.custom_grade : formDate.grade} {formDate.class_code}
+                    {formData.education_level === 'custom' ? formData.custom_grade : formData.grade} {formData.class_code}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Turno</p>
                   <p className="font-semibold text-gray-900">
-                    {SHIFTS.find(s => s.value === formDate.shift)?.label}
+                    {SHIFTS.find(s => s.value === formData.shift)?.label}
                   </p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Ano Letivo</p>
-                  <p className="font-semibold text-gray-900">{formDate.academic_year}</p>
+                  <p className="font-semibold text-gray-900">{formData.academic_year}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-gray-600">Status</p>
                   <p className="font-semibold text-gray-900">
-                    {formDate.is_active ? 'Active' : 'Inactive'}
+                    {formData.is_active ? 'Ativa' : 'Inativa'}
                   </p>
                 </div>
               </div>
@@ -1496,7 +1496,7 @@ function WizardModal({
           </button>
 
           <div className="flex gap-2">
-            {/* Botão "Save e Log out" - aparece em todas as etapas */}
+            {/* Botão "Salvar e Sair" - aparece em todas as etapas */}
             {(isEditing || isDuplicating || step > 1) && step < 5 && (
               <button
                 onClick={onSaveAndExit}
@@ -1506,7 +1506,7 @@ function WizardModal({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Save e Log out
+                Salvar e Sair
               </button>
             )}
 
@@ -1529,7 +1529,7 @@ function WizardModal({
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                {isDuplicating ? 'Create Cópia' : isEditing ? 'Save Alterações' : 'Create Class'}
+                {isDuplicating ? 'Criar Cópia' : isEditing ? 'Salvar Alterações' : 'Criar Turma'}
               </button>
             )}
           </div>

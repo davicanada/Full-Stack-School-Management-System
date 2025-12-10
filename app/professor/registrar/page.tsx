@@ -81,18 +81,18 @@ export default function RegistrarOcorrenciaPage() {
         return;
       }
 
-      const userDate = JSON.parse(storedUser);
+      const userData = JSON.parse(storedUser);
       
-      if (!userDate || userDate.role !== 'professor') {
+      if (!userData || userData.role !== 'professor') {
         toast.error('Acesso negado. Apenas professores podem registrar ocorrências.');
         window.location.href = '/';
         return;
       }
 
-      setUser(userDate);
+      setUser(userData);
     } catch (error) {
       console.error('Erro na autenticação:', error);
-      toast.error('Error verificar autenticação');
+      toast.error('Erro ao verificar autenticação');
       window.location.href = '/';
     } finally {
       setLoading(false);
@@ -111,8 +111,8 @@ export default function RegistrarOcorrenciaPage() {
         .order('name');
       
       if (error) {
-        console.error('Error carregar turmas:', error);
-        toast.error('Error carregar turmas');
+        console.error('Erro ao carregar turmas:', error);
+        toast.error('Erro ao carregar turmas');
         return;
       }
       
@@ -120,8 +120,8 @@ export default function RegistrarOcorrenciaPage() {
         setClasses(data);
       }
     } catch (error) {
-      console.error('Error carregar turmas:', error);
-      toast.error('Error carregar turmas');
+      console.error('Erro ao carregar turmas:', error);
+      toast.error('Erro ao carregar turmas');
     }
   };
 
@@ -137,8 +137,8 @@ export default function RegistrarOcorrenciaPage() {
         setStudents(data);
       }
     } catch (error) {
-      console.error('Error carregar alunos:', error);
-      toast.error('Error carregar alunos');
+      console.error('Erro ao carregar alunos:', error);
+      toast.error('Erro ao carregar alunos');
     }
   };
 
@@ -156,34 +156,34 @@ export default function RegistrarOcorrenciaPage() {
         setOccurrenceTypes(data);
       }
     } catch (error) {
-      console.error('Error carregar tipos de ocorrência:', error);
-      toast.error('Error carregar tipos de ocorrência');
+      console.error('Erro ao carregar tipos de ocorrência:', error);
+      toast.error('Erro ao carregar tipos de ocorrência');
     }
   };
 
   const validateForm = () => {
     if (!selectedClass) {
-      toast.error('Select uma turma');
+      toast.error('Selecione uma turma');
       return false;
     }
     
     if (selectedStudents.length === 0) {
-      toast.error('Select pelo menos um aluno');
+      toast.error('Selecione pelo menos um aluno');
       return false;
     }
     
     if (!selectedType) {
-      toast.error('Select o tipo de ocorrência');
+      toast.error('Selecione o tipo de ocorrência');
       return false;
     }
     
     if (!occurrenceDate) {
-      toast.error('Select a data da ocorrência');
+      toast.error('Selecione a data da ocorrência');
       return false;
     }
     
     if (!occurrenceTime) {
-      toast.error('Select o horário da ocorrência');
+      toast.error('Selecione o horário da ocorrência');
       return false;
     }
     
@@ -214,7 +214,7 @@ export default function RegistrarOcorrenciaPage() {
     try {
       const occurrenceDateTime = new Date(`${occurrenceDate}T${occurrenceTime}`);
       
-      // Create múltiplas ocorrências, uma para cada aluno selecionado
+      // Criar múltiplas ocorrências, uma para cada aluno selecionado
       const occurrences = selectedStudents.map(studentId => ({
         student_id: studentId,
         class_id: selectedClass,
@@ -231,8 +231,8 @@ export default function RegistrarOcorrenciaPage() {
         .select();
       
       if (error) {
-        console.error('Error registrar ocorrências:', error);
-        toast.error('Error registrar ocorrências. Tente novamente.');
+        console.error('Erro ao registrar ocorrências:', error);
+        toast.error('Erro ao registrar ocorrências. Tente novamente.');
       } else {
         const count = selectedStudents.length;
         toast.success(`${count} ocorrência${count > 1 ? 's' : ''} registrada${count > 1 ? 's' : ''} com sucesso!`);
@@ -258,7 +258,7 @@ export default function RegistrarOcorrenciaPage() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-orange-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-orange-600 dark:text-orange-400 font-medium">Loading...</p>
+          <p className="text-orange-600 dark:text-orange-400 font-medium">Carregando...</p>
         </div>
       </div>
     );
@@ -274,21 +274,21 @@ export default function RegistrarOcorrenciaPage() {
               <button
                 onClick={handleCancel}
                 className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                title="Back"
+                title="Voltar"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </button>
               <h1 className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                📝 Registrar New Occurrence
+                📝 Registrar Nova Ocorrência
               </h1>
             </div>
             
             <div className="flex items-center space-x-3">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.name}</p>
-                <p className="text-xs text-orange-600 dark:text-orange-400">Teacher</p>
+                <p className="text-xs text-orange-600 dark:text-orange-400">Professor</p>
               </div>
             </div>
           </div>
@@ -300,10 +300,10 @@ export default function RegistrarOcorrenciaPage() {
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-orange-200 dark:border-gray-700">
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Class */}
+            {/* Turma */}
             <div>
               <label htmlFor="class" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Class *
+                Turma *
               </label>
               <select
                 id="class"
@@ -312,17 +312,17 @@ export default function RegistrarOcorrenciaPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
                 required
               >
-                <option value="">Select uma turma</option>
+                <option value="">Selecione uma turma</option>
                 {classes.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
             </div>
 
-            {/* Students - Seleção múltipla */}
+            {/* Alunos - Seleção múltipla */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Students * (você pode selecionar vários)
+                Alunos * (você pode selecionar vários)
               </label>
               {!selectedClass ? (
                 <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400">
@@ -386,10 +386,10 @@ export default function RegistrarOcorrenciaPage() {
               )}
             </div>
 
-            {/* Type de Occurrence */}
+            {/* Tipo de Ocorrência */}
             <div>
               <label htmlFor="type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Type de Occurrence *
+                Tipo de Ocorrência *
               </label>
               <select
                 id="type"
@@ -398,7 +398,7 @@ export default function RegistrarOcorrenciaPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
                 required
               >
-                <option value="">Select o tipo de ocorrência</option>
+                <option value="">Selecione o tipo de ocorrência</option>
                 {occurrenceTypes.map((type) => (
                   <option key={type.id} value={type.id}>
                     {type.name} ({type.severity})
@@ -407,11 +407,11 @@ export default function RegistrarOcorrenciaPage() {
               </select>
             </div>
 
-            {/* Date e Hora */}
+            {/* Data e Hora */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Date da Occurrence *
+                  Data da Ocorrência *
                 </label>
                 <input
                   type="date"
@@ -425,7 +425,7 @@ export default function RegistrarOcorrenciaPage() {
 
               <div>
                 <label htmlFor="time" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Horário da Occurrence *
+                  Horário da Ocorrência *
                 </label>
                 <input
                   type="time"
@@ -438,10 +438,10 @@ export default function RegistrarOcorrenciaPage() {
               </div>
             </div>
 
-            {/* Description */}
+            {/* Descrição */}
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description (Opcional)
+                Descrição (Opcional)
               </label>
               <textarea
                 id="description"
@@ -465,7 +465,7 @@ export default function RegistrarOcorrenciaPage() {
                 onClick={handleCancel}
                 className="w-full sm:w-auto px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 font-medium transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 type="submit"
@@ -482,7 +482,7 @@ export default function RegistrarOcorrenciaPage() {
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    Registrar Occurrence
+                    Registrar Ocorrência
                   </>
                 )}
               </button>

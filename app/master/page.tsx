@@ -41,27 +41,27 @@ export default function MasterPage() {
   // Main states
   const [user, setUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState('solicitacoes');
-
-  // Request states
+  
+  // States for Solicitações
   const [requests, setRequests] = useState<AccessRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
-
-  // User states
+  
+  // States for Usuários
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('');
   const [userInstitutionFilter, setUserInstitutionFilter] = useState('');
-
-  // Institution states
+  
+  // States for Instituições
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [institutionsLoading, setInstitutionsLoading] = useState(false);
-
+  
   const router = useRouter();
 
-  // Function to fetch pending requests (extracted for global use)
+  // Function to buscar solicitações pendentes (extraída para uso global)
   const fetchPendingRequests = useCallback(async () => {
     if (!user) return;
 
@@ -75,33 +75,33 @@ export default function MasterPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching requests:', error);
-        toast.error('Error loading requests');
+        console.error('Erro ao buscar solicitações:', error);
+        toast.error('Erro ao carregar solicitações');
         return;
       }
 
       setRequests(data || []);
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error loading requests');
+      console.error('Erro:', error);
+      toast.error('Erro ao carregar solicitações');
     } finally {
       setLoading(false);
     }
   }, [user]);
 
-  // Check authentication and user role
+  // Verificar autenticação e papel do usuário
   useEffect(() => {
     const checkAuth = () => {
-      const userDate = localStorage.getItem('user');
-      if (!userDate) {
-        toast.error('Access denied. Please log in first.');
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        toast.error('Acesso negado. Faça login primeiro.');
         router.push('/');
         return;
       }
 
-      const parsedUser = JSON.parse(userDate);
+      const parsedUser = JSON.parse(userData);
       if (parsedUser.role !== 'master') {
-        toast.error('Access denied. Only master users can access this page.');
+        toast.error('Acesso negado. Apenas usuários master podem acessar esta página.');
         router.push('/');
         return;
       }
@@ -120,13 +120,13 @@ export default function MasterPage() {
           .select('*');
 
         if (error) {
-          console.error('Error fetching institutions:', error);
+          console.error('Erro ao buscar instituições:', error);
           return;
         }
 
         setInstitutions(data || []);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Erro:', error);
       }
     };
 
@@ -136,20 +136,20 @@ export default function MasterPage() {
     }
   }, [user, fetchPendingRequests]);
 
-  // Fetch all system users
+  // Buscar todos os usuários do sistema
   const fetchAllUsers = async () => {
     try {
       setUsersLoading(true);
 
-      // Fetch basic users
+      // Buscar usuários básicos
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (usersError) {
-        console.error('Error fetching users:', usersError);
-        toast.error('Error loading users');
+        console.error('Erro ao buscar usuários:', usersError);
+        toast.error('Erro ao carregar usuários');
         return;
       }
 
@@ -158,19 +158,19 @@ export default function MasterPage() {
         return;
       }
 
-      console.log('📊 Users found:', users.length);
+      console.log('📊 Usuários encontrados:', users.length);
 
-      // For teachers without institution_id, fetch through user_institutions
-      const professorsWithoutInstitution = users.filter(user =>
+      // Para professores sem institution_id, buscar através de user_institutions
+      const professorsWithoutInstitution = users.filter(user => 
         user.role === 'professor' && !user.institution_id
       );
 
-      console.log('👨‍🏫 Teachers without institution_id:', professorsWithoutInstitution.length);
+      console.log('👨‍🏫 Professores sem institution_id:', professorsWithoutInstitution.length);
 
       if (professorsWithoutInstitution.length > 0) {
-        // Fetch teacher institutions through user_institutions
+        // Buscar instituições dos professores através de user_institutions
         const professorIds = professorsWithoutInstitution.map(prof => prof.id);
-
+        
         const { data: userInstitutions, error: userInstError } = await supabase
           .from('user_institutions')
           .select(`
@@ -184,11 +184,11 @@ export default function MasterPage() {
           .in('user_id', professorIds);
 
         if (userInstError) {
-          console.error('❌ Error fetching user_institutions:', userInstError);
+          console.error('❌ Erro ao buscar user_institutions:', userInstError);
         } else {
-          console.log('🔗 User_institutions found:', userInstitutions?.length || 0);
-
-          // Mapping to facilitate search
+          console.log('🔗 User_institutions encontrados:', userInstitutions?.length || 0);
+          
+          // Mapeamento para facilitar busca
           const institutionMap = new Map();
           userInstitutions?.forEach(ui => {
             institutionMap.set(ui.user_id, {
@@ -198,15 +198,15 @@ export default function MasterPage() {
             });
           });
 
-          // Update teachers with institution data
+          // Atualizar professores com dados de instituição
           professorsWithoutInstitution.forEach(professor => {
             const instInfo = institutionMap.get(professor.id);
             if (instInfo) {
               professor.institution_id = instInfo.institution_id;
               professor._institution_name = instInfo.institution_name;
-              console.log(`✅ Teacher ${professor.name} → ${instInfo.institution_name}`);
+              console.log(`✅ Professor ${professor.name} → ${instInfo.institution_name}`);
             } else {
-              console.log(`❌ Teacher ${professor.name} → NO INSTITUTION`);
+              console.log(`❌ Professor ${professor.name} → SEM INSTITUIÇÃO`);
             }
           });
         }
@@ -214,14 +214,14 @@ export default function MasterPage() {
 
       setAllUsers(users);
     } catch (error) {
-      console.error('❌ Critical error:', error);
-      toast.error('Error loading users');
+      console.error('❌ Erro crítico:', error);
+      toast.error('Erro ao carregar usuários');
     } finally {
       setUsersLoading(false);
     }
   };
 
-  // Fetch all institutions with counters
+  // Buscar todas as instituições com contadores
   const fetchAllInstitutions = async () => {
     try {
       setInstitutionsLoading(true);
@@ -232,15 +232,15 @@ export default function MasterPage() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching institutions:', error);
-        toast.error('Error loading institutions');
+        console.error('Erro ao buscar instituições:', error);
+        toast.error('Erro ao carregar instituições');
         return;
       }
 
       setInstitutions(data || []);
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Error loading institutions');
+      console.error('Erro:', error);
+      toast.error('Erro ao carregar instituições');
     } finally {
       setInstitutionsLoading(false);
     }
@@ -249,25 +249,25 @@ export default function MasterPage() {
   // Logout
   const handleLogout = () => {
     localStorage.removeItem('user');
-    toast.success('Logout successful!');
+    toast.success('Logout realizado com sucesso!');
     router.push('/');
   };
 
-  // Function to format request type
+  // Function to formatar tipo de solicitação
   const formatRequestType = (requestType: string) => {
     switch (requestType) {
       case 'admin_new':
-        return 'Administrator - New Institution';
+        return 'Administrador - Nova Instituição';
       case 'admin_existing':
-        return 'Administrator - Existing Institution';
+        return 'Administrador - Instituição Existente';
       case 'professor':
-        return 'Teacher';
+        return 'Professor';
       default:
         return requestType;
     }
   };
 
-  // Function to format date
+  // Function to formatar data
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -278,7 +278,7 @@ export default function MasterPage() {
     });
   };
 
-  // Function to approve requests
+  // Function to aprovar solicitações
   const handleApprove = async (request: AccessRequest) => {
     if (!user) return;
 
@@ -286,10 +286,10 @@ export default function MasterPage() {
       setIsProcessing(true);
       setProcessingRequestId(request.id);
 
-      console.log('Processing approval for:', request);
+      console.log('Processando aprovação para:', request);
 
       if (request.request_type === 'admin_new') {
-        // 1. Create new institution
+        // 1. Criar nova instituição
         const { data: newInstitution, error: instError } = await supabase
           .from('institutions')
           .insert({
@@ -302,13 +302,13 @@ export default function MasterPage() {
           .single();
 
         if (instError) {
-          console.error('Error creating institution:', instError);
-          throw new Error('Error creating institution');
+          console.error('Erro ao criar instituição:', instError);
+          throw new Error('Erro ao criar instituição');
         }
 
-        console.log('Institution created:', newInstitution);
+        console.log('Instituição criada:', newInstitution);
 
-        // 2. Create admin user
+        // 2. Criar usuário admin
         const { data: newAdminUser, error: userError } = await supabase
           .from('users')
           .insert({
@@ -322,39 +322,39 @@ export default function MasterPage() {
           .single();
 
         if (userError) {
-          console.error('Error creating admin user:', userError);
-          throw new Error('Error creating admin user');
+          console.error('Erro ao criar usuário admin:', userError);
+          throw new Error('Erro ao criar usuário admin');
         }
 
-        console.log('Admin user created successfully');
+        console.log('Usuário admin criado com sucesso');
 
-        // 3. Also add to user_institutions table for multiple institutions support
-        console.log('🔗 Adding admin to user_institutions...');
-
-        // Prepare insert data
-        const insertDate = {
+        // 3. Adicionar também na tabela user_institutions para suporte a múltiplas instituições
+        console.log('🔗 Adicionando admin em user_institutions...');
+        
+        // Preparar dados da inserção
+        const insertData = {
           user_id: newAdminUser.id,
           institution_id: newInstitution.id,
-          role: 'admin' // Define specific role for this institution
+          role: 'admin' // Definir role específico para esta instituição
         };
-
-        console.log('📋 Date to be inserted in user_institutions:', insertDate);
-
+        
+        console.log('📋 Dados a serem inseridos em user_institutions:', insertData);
+        
         const { error: relationError } = await supabase
           .from('user_institutions')
-          .insert(insertDate);
+          .insert(insertData);
 
         if (relationError) {
-          console.warn('Error adding admin to user_institutions (non-critical):', relationError);
-          // Don't fail approval because of this, since admin already has institution_id
+          console.warn('Erro ao adicionar admin em user_institutions (não crítico):', relationError);
+          // Não falhar a aprovação por conta disso, pois o admin já tem institution_id
         } else {
-          console.log('Admin also added to user_institutions for future multiple institutions support');
+          console.log('Admin também adicionado em user_institutions para suporte futuro a múltiplas instituições');
         }
 
       } else if (request.request_type === 'admin_existing') {
-        console.log('🟡 PROCESSING ADMIN_EXISTING APPROVAL - ALWAYS CREATING NEW USER');
-
-        // SIMPLIFIED: Always create new user (1 email = 1 user)
+        console.log('🟡 PROCESSANDO APROVAÇÃO DE ADMIN_EXISTING - SEMPRE CRIANDO NOVO USUÁRIO');
+        
+        // SIMPLIFICADO: Sempre criar novo usuário (1 email = 1 usuário)
         const { data: newAdminUser, error: userError } = await supabase
           .from('users')
           .insert({
@@ -368,13 +368,13 @@ export default function MasterPage() {
           .single();
 
         if (userError) {
-          console.error('❌ Error creating admin user:', userError);
-          throw new Error(`Error creating admin user: ${userError.message}`);
+          console.error('❌ Erro ao criar usuário admin:', userError);
+          throw new Error(`Erro ao criar usuário admin: ${userError.message}`);
         }
 
-        console.log('✅ New admin user created:', newAdminUser);
-
-        // Also add to user_institutions table
+        console.log('✅ Novo usuário admin criado:', newAdminUser);
+        
+        // Adicionar também na tabela user_institutions
         const { error: relationError } = await supabase
           .from('user_institutions')
           .insert({
@@ -384,21 +384,21 @@ export default function MasterPage() {
           });
 
         if (relationError) {
-          console.warn('❌ Error creating link in user_institutions (non-critical):', relationError);
+          console.warn('❌ Erro ao criar vínculo em user_institutions (não crítico):', relationError);
         }
-
-        console.log('✅ ADMIN_EXISTING APPROVAL COMPLETED SUCCESSFULLY!');
+        
+        console.log('✅ APROVAÇÃO DE ADMIN_EXISTING CONCLUÍDA COM SUCESSO!');
 
       } else if (request.request_type === 'professor') {
-        console.log('🟡 PROCESSING TEACHER APPROVAL - ALWAYS CREATING NEW USER');
-
+        console.log('🟡 PROCESSANDO APROVAÇÃO DE PROFESSOR - SEMPRE CRIANDO NOVO USUÁRIO');
+        
         if (!request.institution_id) {
-          throw new Error('Institution ID not found in request');
+          throw new Error('Institution ID não encontrado na solicitação');
         }
-
-        // SIMPLIFIED: Always create new user (1 email = 1 user)
-        console.log('Creating user WITH institution_id (consistent system)');
-
+        
+        // SIMPLIFICADO: Sempre criar novo usuário (1 email = 1 usuário)
+        console.log('Criando usuário COM institution_id (sistema consistente)');
+        
         const { data: newUser, error: userError } = await supabase
           .from('users')
           .insert({
@@ -407,25 +407,25 @@ export default function MasterPage() {
             password_hash: 'senha123',
             role: 'professor',
             is_active: true,
-            institution_id: request.institution_id  // ADDED BACK for consistency
+            institution_id: request.institution_id  // ADICIONADO DE VOLTA para consistência
           })
           .select()
           .single();
 
         if (userError) {
-          console.error('❌ Error creating teacher user:', userError);
-          throw new Error(`Error creating teacher user: ${userError.message}`);
+          console.error('❌ Erro ao criar usuário professor:', userError);
+          throw new Error(`Erro ao criar usuário professor: ${userError.message}`);
         }
 
-        console.log('✅ New teacher user created:', newUser);
-
-        // Add to user_institutions table (for future consistency)
-        console.log('Teacher has direct institution_id + link in user_institutions for consistency:', {
-          user_id: newUser.id,
-          institution_id: request.institution_id,
-          role: 'professor'
+        console.log('✅ Novo usuário professor criado:', newUser);
+        
+        // Adicionar na tabela user_institutions (para consistência futura)
+        console.log('Professor tem institution_id direto + vínculo em user_institutions para consistência:', { 
+          user_id: newUser.id, 
+          institution_id: request.institution_id, 
+          role: 'professor' 
         });
-
+        
         const { error: userInstError } = await supabase
           .from('user_institutions')
           .insert({
@@ -435,27 +435,27 @@ export default function MasterPage() {
           });
 
         if (userInstError) {
-          console.error('❌ Error linking teacher to institution:', userInstError);
-          throw new Error(`Error linking teacher to institution: ${userInstError.message}`);
+          console.error('❌ Erro ao vincular professor à instituição:', userInstError);
+          throw new Error(`Erro ao vincular professor à instituição: ${userInstError.message}`);
         }
-
-        // Check if link was created
+        
+        // Verificar se o vínculo foi criado
         const { data: checkLink } = await supabase
           .from('user_institutions')
           .select('*')
           .eq('user_id', newUser.id)
           .eq('institution_id', request.institution_id)
           .single();
-
-        console.log('Link created?', checkLink);
-
-        console.log('✅ TEACHER APPROVAL COMPLETED SUCCESSFULLY!');
+        
+        console.log('Vínculo criado?', checkLink);
+        
+        console.log('✅ APROVAÇÃO DE PROFESSOR CONCLUÍDA COM SUCESSO!');
       }
 
-      // 3. Update request status
+      // 3. Atualizar status da solicitação
       const { error: updateError } = await supabase
         .from('access_requests')
-        .update({
+        .update({ 
           status: 'approved',
           approved_by: user.id,
           approved_at: new Date().toISOString()
@@ -463,19 +463,19 @@ export default function MasterPage() {
         .eq('id', request.id);
 
       if (updateError) {
-        console.error('Error updating request:', updateError);
-        throw new Error('Error updating request status');
+        console.error('Erro ao atualizar solicitação:', updateError);
+        throw new Error('Erro ao atualizar status da solicitação');
       }
 
-      console.log('Request approved successfully');
-      toast.success(`Request from ${request.name} approved successfully!`);
-
-      // Reload request list
+      console.log('Solicitação aprovada com sucesso');
+      toast.success(`Solicitação de ${request.name} aprovada com sucesso!`);
+      
+      // Recarregar lista de solicitações
       await fetchPendingRequests();
 
     } catch (error: unknown) {
-      console.error('Error approving request:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error approving request';
+      console.error('Erro ao aprovar solicitação:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao aprovar solicitação';
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -483,7 +483,7 @@ export default function MasterPage() {
     }
   };
 
-  // Function to reject requests
+  // Function to rejeitar solicitações
   const handleReject = async (request: AccessRequest) => {
     if (!user) return;
 
@@ -491,12 +491,12 @@ export default function MasterPage() {
       setIsProcessing(true);
       setProcessingRequestId(request.id);
 
-      console.log('Processing rejection for:', request);
+      console.log('Processando rejeição para:', request);
 
-      // Update request status
+      // Atualizar status da solicitação
       const { error: updateError } = await supabase
         .from('access_requests')
-        .update({
+        .update({ 
           status: 'rejected',
           approved_by: user.id,
           approved_at: new Date().toISOString()
@@ -504,19 +504,19 @@ export default function MasterPage() {
         .eq('id', request.id);
 
       if (updateError) {
-        console.error('Error rejecting request:', updateError);
-        throw new Error('Error updating request status');
+        console.error('Erro ao rejeitar solicitação:', updateError);
+        throw new Error('Erro ao atualizar status da solicitação');
       }
 
-      console.log('Request rejected successfully');
-      toast.success(`Request from ${request.name} rejected.`);
-
-      // Reload request list
+      console.log('Solicitação rejeitada com sucesso');
+      toast.success(`Solicitação de ${request.name} rejeitada.`);
+      
+      // Recarregar lista de solicitações
       await fetchPendingRequests();
 
     } catch (error: unknown) {
-      console.error('Error rejecting request:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error rejecting request';
+      console.error('Erro ao rejeitar solicitação:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao rejeitar solicitação';
       toast.error(errorMessage);
     } finally {
       setIsProcessing(false);
@@ -524,12 +524,12 @@ export default function MasterPage() {
     }
   };
 
-  // Function to delete user
+  // Function to deletar usuário
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!user) return;
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete user "${userName}"?\n\nThis action cannot be undone.`
+      `Tem certeza que deseja deletar o usuário "${userName}"?\n\nEsta ação não pode ser desfeita.`
     );
 
     if (!confirmDelete) return;
@@ -543,36 +543,36 @@ export default function MasterPage() {
         .eq('id', userId);
 
       if (error) {
-        console.error('Error deleting user:', error);
-        toast.error('Error deleting user. Check permissions.');
+        console.error('Erro ao deletar usuário:', error);
+        toast.error('Erro ao deletar usuário. Verifique as permissões.');
         return;
       }
 
-      toast.success(`User "${userName}" deleted successfully!`);
-      await fetchAllUsers(); // Reload user list
+      toast.success(`Usuário "${userName}" deletado com sucesso!`);
+      await fetchAllUsers(); // Recarregar lista de usuários
 
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Internal error deleting user');
+      console.error('Erro:', error);
+      toast.error('Erro interno ao deletar usuário');
     } finally {
       setUsersLoading(false);
     }
   };
 
-  // Function to delete institution
+  // Function to deletar instituição
   const handleDeleteInstitution = async (institutionId: string, institutionName: string) => {
     if (!user) return;
 
-    // Check if there are linked users
+    // Verificar se tem usuários vinculados
     const usersInInstitution = getUserCountByInstitution(institutionId);
-
+    
     if (usersInInstitution > 0) {
-      toast.error(`Cannot delete institution "${institutionName}" because it has ${usersInInstitution} linked user(s).`);
+      toast.error(`Não é possível deletar a instituição "${institutionName}" pois ela possui ${usersInInstitution} usuário(s) vinculado(s).`);
       return;
     }
 
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete institution "${institutionName}"?\n\nThis action cannot be undone.`
+      `Tem certeza que deseja deletar a instituição "${institutionName}"?\n\nEsta ação não pode ser desfeita.`
     );
 
     if (!confirmDelete) return;
@@ -586,78 +586,78 @@ export default function MasterPage() {
         .eq('id', institutionId);
 
       if (error) {
-        console.error('Error deleting institution:', error);
-        toast.error('Error deleting institution. Check permissions.');
+        console.error('Erro ao deletar instituição:', error);
+        toast.error('Erro ao deletar instituição. Verifique as permissões.');
         return;
       }
 
-      toast.success(`Institution "${institutionName}" deleted successfully!`);
-      await fetchAllInstitutions(); // Reload institution list
-
-      // If we're on the users tab, also reload to update filters
+      toast.success(`Instituição "${institutionName}" deletada com sucesso!`);
+      await fetchAllInstitutions(); // Recarregar lista de instituições
+      
+      // Se estamos na aba de usuários, recarregar também para atualizar filtros
       if (activeTab === 'usuarios') {
         await fetchAllUsers();
       }
 
     } catch (error) {
-      console.error('Error:', error);
-      toast.error('Internal error deleting institution');
+      console.error('Erro:', error);
+      toast.error('Erro interno ao deletar instituição');
     } finally {
       setInstitutionsLoading(false);
     }
   };
 
-  // Function to edit user (placeholder)
+  // Function to editar usuário (placeholder)
   const handleEditUser = () => {
-    toast('User editing functionality under development', { icon: '🔧' });
+    toast('Funcionalidade de edição de usuários em desenvolvimento', { icon: '🔧' });
   };
 
-  // Function to edit institution (placeholder)
+  // Function to editar instituição (placeholder)
   const handleEditInstitution = () => {
-    toast('Institution editing functionality under development', { icon: '🔧' });
+    toast('Funcionalidade de edição de instituições em desenvolvimento', { icon: '🔧' });
   };
 
-  // Function to view institution details (placeholder)
+  // Function to ver detalhes da instituição (placeholder)
   const handleViewInstitutionDetails = (institutionId: string) => {
     const usersCount = getUserCountByInstitution(institutionId);
-    toast(`Institution has ${usersCount} linked user(s)`, { icon: 'ℹ️' });
+    toast(`Instituição tem ${usersCount} usuário(s) vinculado(s)`, { icon: 'ℹ️' });
   };
 
-  // Helper functions for filters and search
+  // Funções auxiliares para filtros e busca
   const getInstitutionName = (user: User | { institution_id?: string; _institution_name?: string }) => {
-    // If it's a user object, use _institution_name first
+    // Se é um objeto usuário, usar _institution_name primeiro
     if (user && typeof user === 'object' && '_institution_name' in user && user._institution_name) {
       return user._institution_name;
     }
-
-    // If it's a user object, get institution_id
+    
+    // Se é um objeto usuário, pegar institution_id
     const institutionId = user && typeof user === 'object' ? user.institution_id : user;
-
-    if (!institutionId) return 'No institution';
+    
+    if (!institutionId) return 'Sem instituição';
     const institution = institutions.find(inst => inst.id === institutionId);
-    return institution ? institution.name : 'Institution not found';
+    return institution ? institution.name : 'Instituição não encontrada';
   };
 
-  // Filter users based on active filters
+  // Filtrar usuários baseado nos filtros ativos
   const filteredUsers = allUsers.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(userSearchTerm.toLowerCase());
     const matchesRole = userRoleFilter === '' || user.role === userRoleFilter;
     const matchesInstitution = userInstitutionFilter === '' || user.institution_id === userInstitutionFilter;
-
+    
     return matchesSearch && matchesRole && matchesInstitution;
   });
 
-  // Count users by institution
+  // Contar usuários por instituição
   const getUserCountByInstitution = (institutionId: string) => {
     return allUsers.filter(user => user.institution_id === institutionId).length;
   };
 
-  // Handler for tab change
+  // Handler para mudança de aba
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-
-    // Load specific tab data when necessary
+    
+    // Carregar dados específicos da aba quando necessário
     if (tab === 'usuarios' && allUsers.length === 0) {
       fetchAllUsers();
     } else if (tab === 'instituicoes' && institutions.length === 0) {
@@ -670,7 +670,7 @@ export default function MasterPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Checking permissions...</p>
+          <p className="mt-4 text-gray-600">Verificando permissões...</p>
         </div>
       </div>
     );
@@ -692,10 +692,10 @@ export default function MasterPage() {
               </div>
               <div className="ml-4">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Master Panel - Full Control
+                  Painel Master - Controle Total
                 </h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Welcome, {user.name}
+                  Bem-vindo, {user.name}
                 </p>
               </div>
             </div>
@@ -712,7 +712,7 @@ export default function MasterPage() {
         </div>
       </header>
 
-      {/* Tab System */}
+      {/* Sistema de Abas */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8" aria-label="Tabs">
@@ -724,9 +724,9 @@ export default function MasterPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              📋 Pending Requests
+              📋 Solicitações Pendentes
             </button>
-
+            
             <button
               onClick={() => handleTabChange('usuarios')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -735,9 +735,9 @@ export default function MasterPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              👥 All Users
+              👥 Todos os Usuários
             </button>
-
+            
             <button
               onClick={() => handleTabChange('instituicoes')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -746,9 +746,9 @@ export default function MasterPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              🏢 All Institutions
+              🏢 Todas as Instituições
             </button>
-
+            
             <button
               onClick={() => handleTabChange('logs')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -757,9 +757,9 @@ export default function MasterPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              📊 System Logs
+              📊 Logs do Sistema
             </button>
-
+            
             <button
               onClick={() => handleTabChange('configuracoes')}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -768,31 +768,31 @@ export default function MasterPage() {
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
               }`}
             >
-              ⚙️ Settings
+              ⚙️ Configurações
             </button>
           </nav>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Conteúdo principal */}
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-
-        {/* TAB: PENDING REQUESTS */}
+        
+        {/* ABA: SOLICITAÇÕES PENDENTES */}
         {activeTab === 'solicitacoes' && (
           <div>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Pending Requests
+                Solicitações Pendentes
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Manage all system access requests
+                Gerencie todas as solicitações de acesso ao sistema
               </p>
             </div>
 
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600 dark:text-gray-300">Loading requests...</p>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Carregando solicitações...</p>
               </div>
             ) : requests.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
@@ -802,10 +802,10 @@ export default function MasterPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  No pending requests
+                  Nenhuma solicitação pendente
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  All requests have been processed.
+                  Todas as solicitações foram processadas.
                 </p>
               </div>
             ) : (
@@ -831,17 +831,17 @@ export default function MasterPage() {
                       </div>
                     </div>
 
-                    {/* Specific data based on request type */}
+                    {/* Dados específicos baseados no tipo de solicitação */}
                     {request.request_type === 'admin_new' && (
                       <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                         <h4 className="font-medium text-purple-800 dark:text-purple-300 mb-2">
-                          New Institution:
+                          Nova Instituição:
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                          <p><strong>Name:</strong> {request.new_institution_name}</p>
-                          <p><strong>City:</strong> {request.new_institution_city}</p>
-                          <p><strong>State:</strong> {request.new_institution_state}</p>
-                          <p className="md:col-span-2"><strong>Address:</strong> {request.new_institution_address}</p>
+                          <p><strong>Nome:</strong> {request.new_institution_name}</p>
+                          <p><strong>Cidade:</strong> {request.new_institution_city}</p>
+                          <p><strong>Estado:</strong> {request.new_institution_state}</p>
+                          <p className="md:col-span-2"><strong>Endereço:</strong> {request.new_institution_address}</p>
                         </div>
                       </div>
                     )}
@@ -849,10 +849,10 @@ export default function MasterPage() {
                     {request.request_type === 'admin_existing' && request.institution_id && (
                       <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
-                          Existing Institution:
+                          Instituição Existente:
                         </h4>
                         <p className="text-sm">
-                          <strong>Name:</strong> {getInstitutionName(request)}
+                          <strong>Nome:</strong> {getInstitutionName(request)}
                         </p>
                       </div>
                     )}
@@ -860,17 +860,17 @@ export default function MasterPage() {
                     {request.request_type === 'professor' && request.institution_id && (
                       <div className="mt-4 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
                         <h4 className="font-medium text-orange-800 dark:text-orange-300 mb-2">
-                          Institution:
+                          Instituição:
                         </h4>
                         <p className="text-sm">
-                          <strong>Name:</strong> {getInstitutionName(request)}
+                          <strong>Nome:</strong> {getInstitutionName(request)}
                         </p>
                       </div>
                     )}
 
-                    {/* Action buttons */}
+                    {/* Botões de ação */}
                     <div className="mt-6 flex gap-3">
-                      <button
+                      <button 
                         onClick={() => handleApprove(request)}
                         disabled={isProcessing}
                         className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -878,18 +878,18 @@ export default function MasterPage() {
                         {isProcessing && processingRequestId === request.id ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Approving...
+                            Aprovando...
                           </>
                         ) : (
                           <>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            Approve
+                            Aprovar
                           </>
                         )}
                       </button>
-                      <button
+                      <button 
                         onClick={() => handleReject(request)}
                         disabled={isProcessing}
                         className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
@@ -897,14 +897,14 @@ export default function MasterPage() {
                         {isProcessing && processingRequestId === request.id ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Rejecting...
+                            Rejeitando...
                           </>
                         ) : (
                           <>
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            Reject
+                            Rejeitar
                           </>
                         )}
                       </button>
@@ -916,28 +916,28 @@ export default function MasterPage() {
           </div>
         )}
 
-        {/* TAB: ALL USERS */}
+        {/* ABA: TODOS OS USUÁRIOS */}
         {activeTab === 'usuarios' && (
           <div>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                All Users
+                Todos os Usuários
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Manage all registered users in the system
+                Gerencie todos os usuários cadastrados no sistema
               </p>
             </div>
 
-            {/* Filters and search */}
+            {/* Filtros e busca */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Search user
+                    Buscar usuário
                   </label>
                   <input
                     type="text"
-                    placeholder="Name or email..."
+                    placeholder="Nome ou email..."
                     value={userSearchTerm}
                     onChange={(e) => setUserSearchTerm(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
@@ -945,29 +945,29 @@ export default function MasterPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Filter by role
+                    Filtrar por role
                   </label>
                   <select
                     value={userRoleFilter}
                     onChange={(e) => setUserRoleFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="">All roles</option>
+                    <option value="">Todos os roles</option>
                     <option value="master">Master</option>
                     <option value="admin">Admin</option>
-                    <option value="professor">Teacher</option>
+                    <option value="professor">Professor</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Filter by institution
+                    Filtrar por instituição
                   </label>
                   <select
                     value={userInstitutionFilter}
                     onChange={(e) => setUserInstitutionFilter(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="">All institutions</option>
+                    <option value="">Todas as instituições</option>
                     {institutions.map(inst => (
                       <option key={inst.id} value={inst.id}>{inst.name}</option>
                     ))}
@@ -982,25 +982,25 @@ export default function MasterPage() {
                     }}
                     className="w-full bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                   >
-                    Clear Filters
+                    Limpar Filtros
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* User list */}
+            {/* Lista de usuários */}
             {usersLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600 dark:text-gray-300">Loading users...</p>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Carregando usuários...</p>
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  No users found
+                  Nenhum usuário encontrado
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Try adjusting the search filters.
+                  Tente ajustar os filtros de busca.
                 </p>
               </div>
             ) : (
@@ -1010,19 +1010,19 @@ export default function MasterPage() {
                     <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          User
+                          Usuário
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Role
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Institution
+                          Instituição
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Registration Date
+                          Data Cadastro
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Actions
+                          Ações
                         </th>
                       </tr>
                     </thead>
@@ -1060,14 +1060,14 @@ export default function MasterPage() {
                                 onClick={() => handleEditUser()}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs transition-colors"
                               >
-                                Edit
+                                Editar
                               </button>
                               {userItem.id !== user?.id && (
-                                <button
+                                <button 
                                   onClick={() => handleDeleteUser(userItem.id, userItem.name)}
                                   className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs transition-colors"
                                 >
-                                  Delete
+                                  Deletar
                                 </button>
                               )}
                             </div>
@@ -1082,30 +1082,30 @@ export default function MasterPage() {
           </div>
         )}
 
-        {/* TAB: ALL INSTITUTIONS */}
+        {/* ABA: TODAS AS INSTITUIÇÕES */}
         {activeTab === 'instituicoes' && (
           <div>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                All Institutions
+                Todas as Instituições
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Manage all registered institutions in the system
+                Gerencie todas as instituições cadastradas no sistema
               </p>
             </div>
 
             {institutionsLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600 dark:text-gray-300">Loading institutions...</p>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Carregando instituições...</p>
               </div>
             ) : institutions.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  No institutions found
+                  Nenhuma instituição encontrada
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Approved institutions will appear here.
+                  As instituições aprovadas aparecerão aqui.
                 </p>
               </div>
             ) : (
@@ -1117,11 +1117,11 @@ export default function MasterPage() {
                         {institution.name}
                       </h3>
                       <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-                        <p><strong>Address:</strong> {institution.address}</p>
-                        <p><strong>City:</strong> {institution.city} - {institution.state}</p>
-                        <p><strong>Users:</strong> {getUserCountByInstitution(institution.id)}</p>
+                        <p><strong>Endereço:</strong> {institution.address}</p>
+                        <p><strong>Cidade:</strong> {institution.city} - {institution.state}</p>
+                        <p><strong>Usuários:</strong> {getUserCountByInstitution(institution.id)}</p>
                         {institution.created_at && (
-                          <p><strong>Created at:</strong> {formatDate(institution.created_at)}</p>
+                          <p><strong>Criada em:</strong> {formatDate(institution.created_at)}</p>
                         )}
                       </div>
                     </div>
@@ -1130,19 +1130,19 @@ export default function MasterPage() {
                         onClick={() => handleViewInstitutionDetails(institution.id)}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
                       >
-                        View Details
+                        Ver Detalhes
                       </button>
-                      <button
+                      <button 
                         onClick={() => handleEditInstitution(institution.id, institution.name)}
                         className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
                       >
-                        Edit
+                        Editar
                       </button>
-                      <button
+                      <button 
                         onClick={() => handleDeleteInstitution(institution.id, institution.name)}
                         className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
                       >
-                        Delete
+                        Deletar
                       </button>
                     </div>
                   </div>
@@ -1152,15 +1152,15 @@ export default function MasterPage() {
           </div>
         )}
 
-        {/* TAB: SYSTEM LOGS */}
+        {/* ABA: LOGS DO SISTEMA */}
         {activeTab === 'logs' && (
           <div>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                System Logs
+                Logs do Sistema
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                View all important actions performed in the system
+                Visualize todas as ações importantes realizadas no sistema
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
@@ -1170,24 +1170,24 @@ export default function MasterPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Feature Under Development
+                Funcionalidade em Desenvolvimento
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Soon you will be able to view all important system action logs.
+                Em breve você poderá visualizar todos os logs de ações importantes do sistema.
               </p>
             </div>
           </div>
         )}
 
-        {/* TAB: SETTINGS */}
+        {/* ABA: CONFIGURAÇÕES */}
         {activeTab === 'configuracoes' && (
           <div>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                System Settings
+                Configurações do Sistema
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                Configure global system parameters
+                Configure parâmetros globais do sistema
               </p>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
@@ -1198,10 +1198,10 @@ export default function MasterPage() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Feature Under Development
+                Funcionalidade em Desenvolvimento
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Soon you will be able to configure global system parameters, such as email settings, notifications, etc.
+                Em breve você poderá configurar parâmetros globais do sistema, como configurações de email, notificações, etc.
               </p>
             </div>
           </div>
